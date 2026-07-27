@@ -542,7 +542,10 @@
     border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
   }
   .obj-row:last-child{ border-bottom: none; }
-  .obj-row input[type="checkbox"]{
+  /* Shared custom checkbox — used for every checkbox in the app
+     (objectives, milestone "done") so there is exactly one checkbox
+     visual language, never a native browser one alongside it. */
+  .obj-row input[type="checkbox"], .lp-checkbox{
     appearance: none; -webkit-appearance: none;
     width: 16px; height: 16px; flex: 0 0 auto;
     margin-top: 2px;
@@ -552,11 +555,11 @@
     cursor: pointer;
     position: relative;
   }
-  .obj-row input[type="checkbox"]:checked{
+  .obj-row input[type="checkbox"]:checked, .lp-checkbox:checked{
     background: var(--accent);
     border-color: var(--accent);
   }
-  .obj-row input[type="checkbox"]:checked::after{
+  .obj-row input[type="checkbox"]:checked::after, .lp-checkbox:checked::after{
     content: "";
     position: absolute;
     left: 4px; top: 1px;
@@ -633,10 +636,7 @@
   .milestone-row{ grid-template-columns: 148px 1fr 30px 30px; }
   .weekly-row select, .milestone-row input[type="date"]{ font-size: 12.5px; }
   .weekly-row input[type="text"], .milestone-row input[type="text"]{ font-family: var(--font-body); font-size: 13.5px; }
-  .milestone-row .ms-done{
-    width: 16px; height: 16px; justify-self: center;
-    accent-color: var(--accent); cursor: pointer;
-  }
+  .milestone-row .ms-done{ justify-self: center; margin-top: 0; }
   .milestone-row.overdue{ }
   .milestone-row.overdue input[type="date"]{ border-color: var(--status-hold); color: var(--status-hold); }
   .milestone-row.ms-completed input[type="text"]{ color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--line); }
@@ -1989,7 +1989,7 @@
           '<div class="milestone-row' + (overdue ? ' overdue' : '') + (m.done ? ' ms-completed' : '') + '" data-milestone-row="' + m.id + '">' +
             '<input type="date" data-field="date" data-ms-id="' + m.id + '" value="' + escapeHTML(m.date || '') + '">' +
             '<input type="text" data-field="label" data-ms-id="' + m.id + '" value="' + escapeHTML(m.label) + '" placeholder="Milestone">' +
-            '<input type="checkbox" class="ms-done" data-field="done" data-ms-id="' + m.id + '"' + (m.done ? ' checked' : '') + ' title="Mark complete">' +
+            '<input type="checkbox" class="lp-checkbox ms-done" data-field="done" data-ms-id="' + m.id + '"' + (m.done ? ' checked' : '') + ' title="Mark complete">' +
             '<button type="button" class="row-remove-btn" data-action="remove-milestone" data-ms-id="' + m.id + '" title="Remove">&times;</button>' +
           '</div>'
         );
