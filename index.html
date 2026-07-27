@@ -507,6 +507,128 @@
     margin-top: 8px;
   }
 
+  /* ---- Detail view: card CRUD (edit fields, add/remove rows) ---- */
+  .detail-head-row{
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .detail-delete-btn:hover{ color: var(--status-hold); border-color: transparent; }
+
+  .title-input{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(24px, 3.6vw, 34px);
+    flex: 1 1 260px;
+    min-width: 180px;
+  }
+
+  select.status-select{
+    appearance: none; -webkit-appearance: none;
+    width: auto;
+    cursor: pointer;
+  }
+  select.status-select.status-good{ color: var(--status-good); border-color: color-mix(in srgb, var(--status-good) 40%, var(--line)); }
+  select.status-select.status-watch{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
+  select.status-select.status-hold{ color: var(--status-hold); border-color: color-mix(in srgb, var(--status-hold) 40%, var(--line)); }
+
+  .meta-item select, .meta-item input[type="text"], .meta-item textarea{ margin-top: 2px; }
+  .meta-item textarea.goal-textarea, .meta-item textarea.summary-textarea{ min-height: 52px; font-family: var(--font-body); font-size: 14px; }
+
+  .priority-select-row{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .priority-select-row select{ width: auto; flex: 0 0 auto; }
+  .priority-dots{
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .priority-dots .pdot{ width: 6px; height: 6px; border-radius: 50%; background: var(--line); display: inline-block; }
+  .priority-dots .pdot.filled{ background: var(--text-muted); }
+
+  .detail-block{ margin-bottom: 8px; }
+  .empty-state{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.7;
+    padding: 10px 0 14px;
+  }
+
+  .weekly-row, .milestone-row{
+    display: grid;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .weekly-row{ grid-template-columns: 84px 1fr 30px; }
+  .milestone-row{ grid-template-columns: 148px 1fr 30px 30px; }
+  .weekly-row select, .milestone-row input[type="date"]{ font-size: 12.5px; }
+  .weekly-row input[type="text"], .milestone-row input[type="text"]{ font-family: var(--font-body); font-size: 13.5px; }
+  .milestone-row .ms-done{
+    width: 16px; height: 16px; justify-self: center;
+    accent-color: var(--accent); cursor: pointer;
+  }
+  .milestone-row.overdue{ }
+  .milestone-row.overdue input[type="date"]{ border-color: var(--status-hold); color: var(--status-hold); }
+  .milestone-row.ms-completed input[type="text"]{ color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--line); }
+  .overdue-tag{
+    font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--status-hold); border: 1px solid color-mix(in srgb, var(--status-hold) 45%, var(--line));
+    border-radius: var(--radius); padding: 2px 6px; white-space: nowrap; justify-self: start;
+  }
+
+  .next-milestone-banner{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .next-milestone-banner.overdue{ color: var(--status-hold); }
+  .next-milestone-banner.upcoming{ color: var(--status-good); }
+
+  .obj-group-title-input{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 4px 2px;
+    width: auto;
+    flex: 1 1 auto;
+  }
+  .obj-group-title-input:hover{ border-color: var(--line); }
+  .obj-group-title-input:focus{ border-color: var(--accent); background: var(--bg); }
+  .obj-group-head{
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
+  }
+  .obj-row input[type="text"].obj-text-input{
+    font-family: var(--font-body); font-size: 14px;
+    background: transparent; border: 1px solid transparent; padding: 4px 6px;
+  }
+  .obj-row input[type="text"].obj-text-input:hover{ border-color: var(--line); }
+  .obj-row input[type="text"].obj-text-input:focus{ border-color: var(--accent); background: var(--bg); }
+  .obj-row.done input[type="text"].obj-text-input{
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--line);
+  }
+  .row-remove-btn{
+    background: transparent; border: none; color: var(--text-muted);
+    font-family: var(--font-mono); font-size: 15px; line-height: 1;
+    padding: 6px; border-radius: var(--radius); justify-self: center;
+  }
+  .row-remove-btn:hover{ color: var(--status-hold); }
+
+  @media (max-width: 560px){
+    .weekly-row{ grid-template-columns: 78px 1fr 26px; }
+    .milestone-row{ grid-template-columns: 1fr; }
+    .milestone-row .row-remove-btn{ justify-self: end; }
+  }
+
   /* ============================================================
      SAVINGS PROGRAMME (Phase 3)
      ============================================================ */
@@ -1202,21 +1324,47 @@
 
   <section id="view-detail" class="view" hidden>
     <div class="detail-head">
-      <button type="button" class="btn btn-ghost" id="detail-back">&larr; Back to Work Packages</button>
+      <div class="detail-head-row">
+        <button type="button" class="btn btn-ghost" id="detail-back">&larr; Back to Work Packages</button>
+        <button type="button" class="btn btn-ghost detail-delete-btn" data-action="delete-card">Delete Work Package</button>
+      </div>
       <div class="detail-title-row">
         <span class="pkg-num" id="detail-num"></span>
-        <h2 id="detail-title"></h2>
-        <span id="detail-status-pill"></span>
+        <input type="text" class="title-input" id="detail-title-input" data-cardfield="title" placeholder="Work package title">
+        <select class="pill status-select" id="detail-status-select" data-cardfield="status">
+          <option value="good">On Track</option>
+          <option value="watch">Watch</option>
+          <option value="hold">Hold</option>
+        </select>
       </div>
     </div>
 
     <div class="detail-meta-row" id="detail-meta"><!-- rendered --></div>
 
-    <div id="detail-objectives"><!-- rendered --></div>
+    <div class="detail-block">
+      <div class="section-head"><span class="num">WKLY</span><h2>Weekly Recurring Items</h2><span class="rule"></span></div>
+      <p class="section-sub">Feeds the Master Schedule's Micro view — one chip per item, on the day you set.</p>
+      <div id="detail-weekly-list"><!-- rendered --></div>
+      <button type="button" class="btn ie-add-btn" data-action="add-weekly">+ Add Weekly Item</button>
+    </div>
+
+    <div class="detail-block">
+      <div class="section-head"><span class="num">MLST</span><h2>Milestones</h2><span class="rule"></span></div>
+      <p class="section-sub">Feeds the Master Schedule's Macro view, grouped by year.</p>
+      <div class="next-milestone-banner" id="detail-next-milestone"><!-- rendered --></div>
+      <div id="detail-milestone-list"><!-- rendered --></div>
+      <button type="button" class="btn ie-add-btn" data-action="add-milestone">+ Add Milestone</button>
+    </div>
+
+    <div class="detail-block">
+      <div class="section-head"><span class="num">OBJ</span><h2>Objectives</h2><span class="rule"></span></div>
+      <div id="detail-objectives"><!-- rendered --></div>
+      <button type="button" class="btn ie-add-btn" data-action="add-group">+ Add Objective Group</button>
+    </div>
 
     <div class="detail-notes">
       <div class="section-head"><span class="num">NOTES</span><h2>Notes</h2><span class="rule"></span></div>
-      <textarea id="detail-notes-box" rows="6" placeholder="Free-form notes for this life area..."></textarea>
+      <textarea id="detail-notes-box" rows="6" data-cardfield="notes" placeholder="Free-form notes for this life area..."></textarea>
       <div class="save-hint">Saved automatically to this device.</div>
     </div>
   </section>
@@ -1268,6 +1416,9 @@
   LP.genId = genId;
 
   function deepClone(x){ return JSON.parse(JSON.stringify(x)); }
+
+  const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  function todayISO(){ return new Date().toISOString().slice(0, 10); }
 
   const DEFAULT_CARDS = [
     {
@@ -1572,8 +1723,11 @@
     }).join('') + '<button type="button" class="card pkg-card pkg-card-add" id="add-workpackage-btn">+ Add Work Package</button>';
   }
 
-  function priorityPillHTML(priority){
-    return '<span class="pill priority-' + priority.toLowerCase() + '">' + escapeHTML(priority) + ' Priority</span>';
+  function priorityDotsHTML(priority){
+    const level = { High: 3, Medium: 2, Low: 1 }[priority] || 1;
+    let dots = '';
+    for(let i = 0; i < 3; i++) dots += '<span class="pdot' + (i < level ? ' filled' : '') + '"></span>';
+    return '<span class="priority-dots">' + dots + '<span>' + escapeHTML(priority) + ' Priority</span></span>';
   }
 
   function cardById(id){
@@ -1591,48 +1745,8 @@
   LP.showView = showView;
 
   /* ============================================================
-     PHASE 2 — Detail drill-down
+     PHASE 2 (revised) — Detail drill-down with full card CRUD
      ============================================================ */
-  function openDetail(cardId){
-    const c = cardById(cardId);
-    if(!c) return;
-    LP.currentDetailCardId = cardId;
-
-    document.getElementById('detail-num').textContent = 'WP ' + cardNum(cardId);
-    document.getElementById('detail-title').textContent = c.title;
-    document.getElementById('detail-status-pill').innerHTML = statusPillHTML(c.status);
-
-    document.getElementById('detail-meta').innerHTML =
-      '<div class="meta-item wide"><div class="micro-label">Goal</div><div class="val prose">' + escapeHTML(c.goal) + '</div></div>' +
-      '<div class="meta-item"><div class="micro-label">Priority</div><div class="val">' + priorityPillHTML(c.priority) + '</div></div>' +
-      '<div class="meta-item"><div class="micro-label">Cadence</div><div class="val">' + escapeHTML(c.cadence) + '</div></div>' +
-      '<div class="meta-item"><div class="micro-label">Sequencing</div><div class="val">' + escapeHTML(c.sequencing) + '</div></div>';
-
-    document.getElementById('detail-objectives').innerHTML = c.objectiveGroups.map(function(g){
-      const rows = g.items.map(function(item){
-        return (
-          '<div class="obj-row' + (item.done ? ' done' : '') + '" data-obj-row="' + item.id + '">' +
-            '<input type="checkbox" id="chk-' + item.id + '" data-obj-id="' + item.id + '"' + (item.done ? ' checked' : '') + '>' +
-            '<label for="chk-' + item.id + '">' + escapeHTML(item.text) + '</label>' +
-          '</div>'
-        );
-      }).join('');
-      return (
-        '<div class="obj-group">' +
-          '<div class="obj-group-title">' + escapeHTML(g.group) + '</div>' +
-          rows +
-        '</div>'
-      );
-    }).join('');
-
-    const notesBox = document.getElementById('detail-notes-box');
-    notesBox.value = c.notes || '';
-    notesBox.dataset.cardId = cardId;
-
-    showView('detail');
-  }
-  LP.openDetail = openDetail;
-
   function findObjectiveItem(cardId, objId){
     const c = cardById(cardId);
     if(!c) return null;
@@ -1642,29 +1756,332 @@
     }
     return null;
   }
+  function findWeeklyItem(cardId, wkId){
+    const c = cardById(cardId);
+    if(!c) return null;
+    return c.weeklyItems.find(function(w){ return w.id === wkId; });
+  }
+  function findMilestone(cardId, msId){
+    const c = cardById(cardId);
+    if(!c) return null;
+    return c.milestones.find(function(m){ return m.id === msId; });
+  }
+
+  function renderObjectivesBlock(c){
+    const el = document.getElementById('detail-objectives');
+    if(!c.objectiveGroups.length){
+      el.innerHTML = '<div class="empty-state">No objectives yet for this life area — add a group to get started.</div>';
+      return;
+    }
+    el.innerHTML = c.objectiveGroups.map(function(g, gi){
+      const rows = g.items.length
+        ? g.items.map(function(item){
+            return (
+              '<div class="obj-row' + (item.done ? ' done' : '') + '" data-obj-row="' + item.id + '">' +
+                '<input type="checkbox" data-field="done" data-obj-id="' + item.id + '"' + (item.done ? ' checked' : '') + '>' +
+                '<input type="text" class="obj-text-input" data-field="text" data-obj-id="' + item.id + '" value="' + escapeHTML(item.text) + '" placeholder="Objective">' +
+                '<button type="button" class="row-remove-btn" data-action="remove-item" data-obj-id="' + item.id + '" title="Remove">&times;</button>' +
+              '</div>'
+            );
+          }).join('')
+        : '<div class="empty-state">No items in this group yet.</div>';
+      return (
+        '<div class="obj-group">' +
+          '<div class="obj-group-head">' +
+            '<input type="text" class="obj-group-title-input" data-field="groupname" data-group-idx="' + gi + '" value="' + escapeHTML(g.group) + '" placeholder="Group name">' +
+            '<button type="button" class="row-remove-btn" data-action="remove-group" data-group-idx="' + gi + '" title="Remove group">&times;</button>' +
+          '</div>' +
+          rows +
+          '<button type="button" class="btn ie-add-btn" data-action="add-item" data-group-idx="' + gi + '">+ Add Item</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderWeeklyBlock(c){
+    const el = document.getElementById('detail-weekly-list');
+    if(!c.weeklyItems.length){
+      el.innerHTML = '<div class="empty-state">No weekly recurring items for this life area.</div>';
+      return;
+    }
+    el.innerHTML = c.weeklyItems.map(function(w){
+      return (
+        '<div class="weekly-row" data-weekly-row="' + w.id + '">' +
+          '<select data-field="day" data-weekly-id="' + w.id + '">' +
+            DAY_ORDER.map(function(d){ return '<option value="' + d + '"' + (d === w.day ? ' selected' : '') + '>' + d + '</option>'; }).join('') +
+          '</select>' +
+          '<input type="text" data-field="label" data-weekly-id="' + w.id + '" value="' + escapeHTML(w.label) + '" placeholder="e.g. Push session">' +
+          '<button type="button" class="row-remove-btn" data-action="remove-weekly" data-weekly-id="' + w.id + '" title="Remove">&times;</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderMilestonesBlock(c){
+    const el = document.getElementById('detail-milestone-list');
+    if(!c.milestones.length){
+      el.innerHTML = '<div class="empty-state">No milestones scheduled for this life area.</div>';
+    } else {
+      const today = todayISO();
+      el.innerHTML = c.milestones.map(function(m){
+        const overdue = !m.done && m.date && m.date < today;
+        return (
+          '<div class="milestone-row' + (overdue ? ' overdue' : '') + (m.done ? ' ms-completed' : '') + '" data-milestone-row="' + m.id + '">' +
+            '<input type="date" data-field="date" data-ms-id="' + m.id + '" value="' + escapeHTML(m.date || '') + '">' +
+            '<input type="text" data-field="label" data-ms-id="' + m.id + '" value="' + escapeHTML(m.label) + '" placeholder="Milestone">' +
+            '<input type="checkbox" class="ms-done" data-field="done" data-ms-id="' + m.id + '"' + (m.done ? ' checked' : '') + ' title="Mark complete">' +
+            '<button type="button" class="row-remove-btn" data-action="remove-milestone" data-ms-id="' + m.id + '" title="Remove">&times;</button>' +
+          '</div>'
+        );
+      }).join('');
+    }
+    renderNextMilestoneBanner(c);
+  }
+
+  function renderNextMilestoneBanner(c){
+    const el = document.getElementById('detail-next-milestone');
+    if(!el) return;
+    const today = todayISO();
+    const upcoming = c.milestones.filter(function(m){ return !m.done && m.date >= today; }).sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+    if(upcoming.length){
+      const days = Math.round((new Date(upcoming[0].date + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+      el.className = 'next-milestone-banner upcoming';
+      el.textContent = days === 0
+        ? 'Next: "' + upcoming[0].label + '" — today.'
+        : 'Next: "' + upcoming[0].label + '" — in ' + days + ' day' + (days === 1 ? '' : 's') + '.';
+      return;
+    }
+    const overdue = c.milestones.filter(function(m){ return !m.done && m.date < today; }).sort(function(a, b){ return a.date > b.date ? -1 : 1; });
+    if(overdue.length){
+      const days = Math.round((new Date(today + 'T00:00:00') - new Date(overdue[0].date + 'T00:00:00')) / 86400000);
+      el.className = 'next-milestone-banner overdue';
+      el.textContent = '"' + overdue[0].label + '" is overdue by ' + days + ' day' + (days === 1 ? '' : 's') + '.';
+      return;
+    }
+    el.className = 'next-milestone-banner';
+    el.textContent = 'No upcoming milestones.';
+  }
+
+  function openDetail(cardId){
+    const c = cardById(cardId);
+    if(!c) return;
+    LP.currentDetailCardId = cardId;
+
+    document.getElementById('detail-num').textContent = 'WP ' + cardNum(cardId);
+
+    const titleInput = document.getElementById('detail-title-input');
+    titleInput.value = c.title;
+
+    const statusSelect = document.getElementById('detail-status-select');
+    statusSelect.value = c.status;
+    statusSelect.className = 'pill status-select status-' + c.status;
+
+    document.getElementById('detail-meta').innerHTML =
+      '<div class="meta-item wide"><div class="micro-label">Summary</div><textarea class="summary-textarea" rows="2" data-cardfield="summary" placeholder="One-line summary shown on the overview card">' + escapeHTML(c.summary) + '</textarea></div>' +
+      '<div class="meta-item"><div class="micro-label">Target</div><input type="text" data-cardfield="target" value="' + escapeHTML(c.target) + '" placeholder="One-line target"></div>' +
+      '<div class="meta-item wide"><div class="micro-label">Goal</div><textarea class="goal-textarea" rows="2" data-cardfield="goal" placeholder="One-sentence goal">' + escapeHTML(c.goal) + '</textarea></div>' +
+      '<div class="meta-item"><div class="micro-label">Priority</div><div class="priority-select-row"><select data-cardfield="priority"><option value="High"' + (c.priority === 'High' ? ' selected' : '') + '>High</option><option value="Medium"' + (c.priority === 'Medium' ? ' selected' : '') + '>Medium</option><option value="Low"' + (c.priority === 'Low' ? ' selected' : '') + '>Low</option></select><div class="priority-dots-mount" id="detail-priority-dots">' + priorityDotsHTML(c.priority) + '</div></div></div>' +
+      '<div class="meta-item"><div class="micro-label">Cadence</div><input type="text" data-cardfield="cadence" value="' + escapeHTML(c.cadence) + '" placeholder="How often this needs attention"></div>' +
+      '<div class="meta-item"><div class="micro-label">Sequencing</div><input type="text" data-cardfield="sequencing" value="' + escapeHTML(c.sequencing) + '" placeholder="e.g. Yr 1–2, Ongoing"></div>';
+
+    renderWeeklyBlock(c);
+    renderMilestonesBlock(c);
+    renderObjectivesBlock(c);
+
+    const notesBox = document.getElementById('detail-notes-box');
+    notesBox.value = c.notes || '';
+
+    showView('detail');
+  }
+  LP.openDetail = openDetail;
+
+  function refreshDetailIfOpen(){
+    if(!document.getElementById('view-detail').hidden && LP.currentDetailCardId){
+      document.getElementById('detail-priority-dots').innerHTML = priorityDotsHTML(cardById(LP.currentDetailCardId).priority);
+    }
+  }
 
   function wireDetailEvents(){
+    const detailView = document.getElementById('view-detail');
+
     document.getElementById('detail-back').addEventListener('click', function(){
       showView('home');
     });
 
-    document.getElementById('detail-objectives').addEventListener('change', function(e){
-      const target = e.target;
-      if(target.matches('input[type="checkbox"][data-obj-id]')){
-        const objId = target.dataset.objId;
-        const item = findObjectiveItem(LP.currentDetailCardId, objId);
-        if(!item) return;
-        item.done = target.checked;
-        persistCards();
-        const row = document.querySelector('[data-obj-row="' + objId + '"]');
-        if(row) row.classList.toggle('done', target.checked);
+    detailView.addEventListener('click', function(e){
+      const delBtn = e.target.closest('[data-action="delete-card"]');
+      if(delBtn){
+        const c = cardById(LP.currentDetailCardId);
+        if(c && confirm('Delete "' + c.title + '"? This removes the whole work package, including its objectives, weekly items, and milestones.')){
+          LP.cards = LP.cards.filter(function(x){ return x.id !== c.id; });
+          onCardsChanged();
+          showView('home');
+        }
+        return;
+      }
+
+      const removeItemBtn = e.target.closest('[data-action="remove-item"]');
+      if(removeItemBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.objectiveGroups.forEach(function(g){ g.items = g.items.filter(function(it){ return it.id !== removeItemBtn.dataset.objId; }); });
+        onCardsChanged();
+        renderObjectivesBlock(c);
+        return;
+      }
+      const addItemBtn = e.target.closest('[data-action="add-item"]');
+      if(addItemBtn){
+        const c = cardById(LP.currentDetailCardId);
+        const g = c.objectiveGroups[parseInt(addItemBtn.dataset.groupIdx, 10)];
+        g.items.push({ id: genId('obj'), text: '', done: false });
+        onCardsChanged();
+        renderObjectivesBlock(c);
+        const inputs = document.querySelectorAll('#detail-objectives .obj-text-input');
+        if(inputs.length) inputs[inputs.length - 1].focus();
+        return;
+      }
+      const removeGroupBtn = e.target.closest('[data-action="remove-group"]');
+      if(removeGroupBtn){
+        const c = cardById(LP.currentDetailCardId);
+        const idx = parseInt(removeGroupBtn.dataset.groupIdx, 10);
+        if(confirm('Remove the "' + c.objectiveGroups[idx].group + '" group and all its items?')){
+          c.objectiveGroups.splice(idx, 1);
+          onCardsChanged();
+          renderObjectivesBlock(c);
+        }
+        return;
+      }
+      const addGroupBtn = e.target.closest('[data-action="add-group"]');
+      if(addGroupBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.objectiveGroups.push({ group: 'New Group', items: [] });
+        onCardsChanged();
+        renderObjectivesBlock(c);
+        const groupInputs = document.querySelectorAll('#detail-objectives .obj-group-title-input');
+        if(groupInputs.length) groupInputs[groupInputs.length - 1].focus();
+        return;
+      }
+
+      const removeWeeklyBtn = e.target.closest('[data-action="remove-weekly"]');
+      if(removeWeeklyBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.weeklyItems = c.weeklyItems.filter(function(w){ return w.id !== removeWeeklyBtn.dataset.weeklyId; });
+        onCardsChanged();
+        renderWeeklyBlock(c);
+        return;
+      }
+      const addWeeklyBtn = e.target.closest('[data-action="add-weekly"]');
+      if(addWeeklyBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.weeklyItems.push({ id: genId('wk'), day: 'Mon', label: '' });
+        onCardsChanged();
+        renderWeeklyBlock(c);
+        const inputs = document.querySelectorAll('#detail-weekly-list input[type="text"]');
+        if(inputs.length) inputs[inputs.length - 1].focus();
+        return;
+      }
+
+      const removeMsBtn = e.target.closest('[data-action="remove-milestone"]');
+      if(removeMsBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.milestones = c.milestones.filter(function(m){ return m.id !== removeMsBtn.dataset.msId; });
+        onCardsChanged();
+        renderMilestonesBlock(c);
+        return;
+      }
+      const addMsBtn = e.target.closest('[data-action="add-milestone"]');
+      if(addMsBtn){
+        const c = cardById(LP.currentDetailCardId);
+        c.milestones.push({ id: genId('ms'), date: todayISO(), label: '', done: false });
+        onCardsChanged();
+        renderMilestonesBlock(c);
+        const inputs = document.querySelectorAll('#detail-milestone-list input[type="text"]');
+        if(inputs.length) inputs[inputs.length - 1].focus();
+        return;
       }
     });
 
-    document.getElementById('detail-notes-box').addEventListener('input', function(e){
-      const cardId = e.target.dataset.cardId;
-      const c = cardById(cardId);
-      if(c){ c.notes = e.target.value; persistCards(); }
+    detailView.addEventListener('input', function(e){
+      const t = e.target;
+      const c = cardById(LP.currentDetailCardId);
+      if(!c) return;
+
+      if(t.dataset.cardfield && t.dataset.cardfield !== 'status' && t.dataset.cardfield !== 'priority'){
+        c[t.dataset.cardfield] = t.value;
+        onCardsChanged();
+        return;
+      }
+      if(t.dataset.field === 'text' && t.dataset.objId){
+        const item = findObjectiveItem(c.id, t.dataset.objId);
+        if(item){ item.text = t.value; persistCards(); }
+        return;
+      }
+      if(t.dataset.field === 'groupname' && t.dataset.groupIdx !== undefined){
+        c.objectiveGroups[parseInt(t.dataset.groupIdx, 10)].group = t.value;
+        persistCards();
+        return;
+      }
+      if(t.dataset.field === 'label' && t.dataset.weeklyId){
+        const w = findWeeklyItem(c.id, t.dataset.weeklyId);
+        if(w){ w.label = t.value; onCardsChanged(); }
+        return;
+      }
+      if((t.dataset.field === 'label' || t.dataset.field === 'date') && t.dataset.msId){
+        const m = findMilestone(c.id, t.dataset.msId);
+        if(!m) return;
+        m[t.dataset.field] = t.value;
+        onCardsChanged();
+        const row = document.querySelector('[data-milestone-row="' + m.id + '"]');
+        if(row){
+          const overdue = !m.done && m.date && m.date < todayISO();
+          row.classList.toggle('overdue', overdue);
+        }
+        renderNextMilestoneBanner(c);
+      }
+    });
+
+    detailView.addEventListener('change', function(e){
+      const t = e.target;
+      const c = cardById(LP.currentDetailCardId);
+      if(!c) return;
+
+      if(t.dataset.cardfield === 'status'){
+        c.status = t.value;
+        t.className = 'pill status-select status-' + t.value;
+        onCardsChanged();
+        return;
+      }
+      if(t.dataset.cardfield === 'priority'){
+        c.priority = t.value;
+        onCardsChanged();
+        refreshDetailIfOpen();
+        return;
+      }
+      if(t.dataset.field === 'done' && t.dataset.objId){
+        const item = findObjectiveItem(c.id, t.dataset.objId);
+        if(!item) return;
+        item.done = t.checked;
+        persistCards();
+        const row = document.querySelector('[data-obj-row="' + t.dataset.objId + '"]');
+        if(row) row.classList.toggle('done', t.checked);
+        return;
+      }
+      if(t.dataset.field === 'day' && t.dataset.weeklyId){
+        const w = findWeeklyItem(c.id, t.dataset.weeklyId);
+        if(w){ w.day = t.value; onCardsChanged(); }
+        return;
+      }
+      if(t.dataset.field === 'done' && t.dataset.msId){
+        const m = findMilestone(c.id, t.dataset.msId);
+        if(!m) return;
+        m.done = t.checked;
+        onCardsChanged();
+        const row = document.querySelector('[data-milestone-row="' + m.id + '"]');
+        if(row){
+          row.classList.toggle('ms-completed', m.done);
+          row.classList.toggle('overdue', !m.done && m.date < todayISO());
+        }
+        renderNextMilestoneBanner(c);
+      }
     });
 
     document.getElementById('workpackages-grid').addEventListener('click', function(e){
@@ -2065,8 +2482,6 @@
   /* ============================================================
      PHASE 5 — Master Schedule (Micro / Macro)
      ============================================================ */
-  const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
   function renderScheduleMicro(){
     const grid = document.getElementById('schedule-micro');
     if(!grid) return;
