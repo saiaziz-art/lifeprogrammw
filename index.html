@@ -1621,7 +1621,27 @@
 
   /* ============================================================
      STORAGE HELPER — wraps window.storage (personal, JSON-serialized)
+     window.storage is a host-provided API (e.g. inside Claude
+     Artifacts/Claude Code) and is NOT a standard browser global. When
+     this file is opened directly, self-hosted, or deployed as a
+     static site, window.storage will not exist — so this falls back
+     to the browser's own localStorage, keeping every persisted value
+     working the same way either way. window.storage (if present) is
+     always preferred, so this still behaves correctly if re-embedded
+     in a host that provides it.
      ============================================================ */
+  const hasHostStorage = !!(window.storage && typeof window.storage.get === 'function' && typeof window.storage.set === 'function');
+  const localStore = {
+    get(key){
+      try{ return window.localStorage.getItem(key); }
+      catch(e){ return null; }
+    },
+    set(key, value){
+      try{ window.localStorage.setItem(key, value); }
+      catch(e){ throw e; }
+    }
+  };
+
   function showSaveWarning(message){
     let el = document.getElementById('save-warning-toast');
     if(!el){
@@ -1641,8 +1661,8 @@
   const Store = {
     get(key, fallback){
       try{
-        if(!window.storage || typeof window.storage.get !== 'function') return fallback;
-        const raw = window.storage.get(key);
+        const backend = hasHostStorage ? window.storage : localStore;
+        const raw = backend.get(key);
         if(raw === undefined || raw === null) return fallback;
         return (typeof raw === 'string') ? JSON.parse(raw) : raw;
       }catch(e){
@@ -1652,8 +1672,8 @@
     },
     set(key, value){
       try{
-        if(!window.storage || typeof window.storage.set !== 'function') return;
-        window.storage.set(key, JSON.stringify(value));
+        const backend = hasHostStorage ? window.storage : localStore;
+        backend.set(key, JSON.stringify(value));
       }catch(e){
         console.warn('LP storage.set failed for', key, e);
         showSaveWarning();
