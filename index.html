@@ -394,6 +394,21 @@
     font-size: 12.5px;
     color: var(--text);
   }
+  .pkg-card-add{
+    background: transparent;
+    border: 1px dashed var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .pkg-card-add:hover{ border-color: var(--accent); color: var(--accent); }
+  .pkg-card-add::before{ display: none; }
 
   /* ============================================================
      DETAIL DRILL-DOWN (Phase 2)
@@ -1243,17 +1258,25 @@
   LP.Store = Store;
 
   /* ============================================================
-     LIFE-AREA DATA — 9 work packages
-     Each objective item id must be globally unique (used as the
-     persisted checkbox storage key: `lp.obj.<id>`).
+     LIFE-AREA DATA — 9 default work packages, seeded into
+     window.storage on first load only. LP.cards (loaded below) is
+     the live, mutable, persisted source of truth from then on —
+     this DEFAULT_CARDS constant is never mutated at runtime; it is
+     only read again by the per-section "reset to defaults" actions.
      ============================================================ */
-  LP.cards = [
+  function genId(prefix){ return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  LP.genId = genId;
+
+  function deepClone(x){ return JSON.parse(JSON.stringify(x)); }
+
+  const DEFAULT_CARDS = [
     {
-      id: 'savings', num: '01', title: 'Savings / Deposits', status: 'watch',
+      id: 'savings', title: 'Savings / Deposits', status: 'watch',
       summary: 'Deposit fund building at mid-case rate; FX drift is the main swing factor.',
       target: '£45,000 deposit fund by Dec 2028',
       goal: 'Build the deposit fund on schedule without sacrificing family time or health commitments.',
       priority: 'High', cadence: 'Weekly review (Sun)', sequencing: 'Yr 1–3',
+      notes: '',
       objectiveGroups: [
         { group: 'Deposit Fund', items: [
           { id: 'savings-1', text: 'Set up standing order into deposit ISA on payday', done: true },
@@ -1265,18 +1288,19 @@
           { id: 'savings-5', text: 'Move any bonus/windfall straight to the deposit pot', done: false }
         ]}
       ],
-      weeklyItems: [ { day: 'Sun', label: 'Money review' } ],
+      weeklyItems: [ { id: 'savings-wk-1', day: 'Sun', label: 'Money review' } ],
       milestones: [
-        { date: '2027-06-01', label: 'Deposit fund reaches 50% of target' },
-        { date: '2028-12-01', label: 'Deposit target met (mid case)' }
+        { id: 'savings-ms-1', date: '2027-06-01', label: 'Deposit fund reaches 50% of target', done: false },
+        { id: 'savings-ms-2', date: '2028-12-01', label: 'Deposit target met (mid case)', done: false }
       ]
     },
     {
-      id: 'goals', num: '02', title: 'Long-Term + Short-Term Goals', status: 'watch',
+      id: 'goals', title: 'Long-Term + Short-Term Goals', status: 'watch',
       summary: 'Structural life decisions parked pending deposit progress and family timing.',
       target: 'Confirm long-term location and home project scope by Yr 2',
       goal: 'Make the big structural decisions deliberately, on their own timeline, rather than by default.',
       priority: 'High', cadence: 'Quarterly review', sequencing: 'Yr 1–5+',
+      notes: '',
       objectiveGroups: [
         { group: 'Long-Term Location', items: [
           { id: 'goals-1', text: 'List non-negotiables for a long-term base location', done: true },
@@ -1293,16 +1317,17 @@
       ],
       weeklyItems: [],
       milestones: [
-        { date: '2027-01-15', label: 'Yr 2 structural decision review' },
-        { date: '2028-06-01', label: 'Home project go/no-go' }
+        { id: 'goals-ms-1', date: '2027-01-15', label: 'Yr 2 structural decision review', done: false },
+        { id: 'goals-ms-2', date: '2028-06-01', label: 'Home project go/no-go', done: false }
       ]
     },
     {
-      id: 'health', num: '03', title: 'Health + Fitness', status: 'good',
+      id: 'health', title: 'Health + Fitness', status: 'good',
       summary: 'Strength split and running base both holding; marathon training on schedule.',
       target: 'Sub-4:15 marathon, September 2027',
       goal: 'Build durable strength and endurance that outlasts any single event.',
       priority: 'High', cadence: 'Daily / Weekly', sequencing: 'Ongoing',
+      notes: '',
       objectiveGroups: [
         { group: 'Strength Split (weekly)', items: [
           { id: 'health-1', text: 'Mon — Push session', done: true },
@@ -1326,21 +1351,22 @@
         ]}
       ],
       weeklyItems: [
-        { day: 'Mon', label: 'Push' }, { day: 'Tue', label: 'Run 5k' },
-        { day: 'Wed', label: 'Pull' }, { day: 'Fri', label: 'Legs' },
-        { day: 'Sat', label: 'Long run' }
+        { id: 'health-wk-1', day: 'Mon', label: 'Push' }, { id: 'health-wk-2', day: 'Tue', label: 'Run 5k' },
+        { id: 'health-wk-3', day: 'Wed', label: 'Pull' }, { id: 'health-wk-4', day: 'Fri', label: 'Legs' },
+        { id: 'health-wk-5', day: 'Sat', label: 'Long run' }
       ],
       milestones: [
-        { date: '2026-09-01', label: 'Half marathon (tune-up race)' },
-        { date: '2027-09-12', label: 'Marathon — target sub-4:15' }
+        { id: 'health-ms-1', date: '2026-09-01', label: 'Half marathon (tune-up race)', done: false },
+        { id: 'health-ms-2', date: '2027-09-12', label: 'Marathon — target sub-4:15', done: false }
       ]
     },
     {
-      id: 'community', num: '04', title: 'Community', status: 'hold',
+      id: 'community', title: 'Community', status: 'hold',
       summary: 'Weekly five-a-side lapsed for six weeks; deeper group commitment not yet chosen.',
       target: 'Consistent weekly social anchor + one active group membership',
       goal: 'Keep a low-effort recurring social anchor alive, and go deeper into one real group.',
       priority: 'Medium', cadence: 'Weekly', sequencing: 'Ongoing',
+      notes: '',
       objectiveGroups: [
         { group: 'Weekly Anchor', items: [
           { id: 'community-1', text: 'Rebook the Thursday five-a-side slot', done: false },
@@ -1352,17 +1378,18 @@
           { id: 'community-5', text: 'Commit to one for a full term', done: false }
         ]}
       ],
-      weeklyItems: [ { day: 'Thu', label: '5-a-side' } ],
+      weeklyItems: [ { id: 'community-wk-1', day: 'Thu', label: '5-a-side' } ],
       milestones: [
-        { date: '2026-09-01', label: 'Join one club/society for the autumn term' }
+        { id: 'community-ms-1', date: '2026-09-01', label: 'Join one club/society for the autumn term', done: false }
       ]
     },
     {
-      id: 'hobbies', num: '05', title: 'Hobbies', status: 'good',
+      id: 'hobbies', title: 'Hobbies', status: 'good',
       summary: 'Guitar practice is a steady weekly habit; the photography project is ticking along.',
       target: 'Finish one personal photo series by year end',
       goal: 'Protect time for things done purely for their own sake — no income pressure attached.',
       priority: 'Medium', cadence: 'Weekly / Monthly', sequencing: 'Yr 1',
+      notes: '',
       objectiveGroups: [
         { group: 'Guitar', items: [
           { id: 'hobbies-1', text: 'Practice 20 min, Sunday evening', done: true },
@@ -1374,17 +1401,18 @@
           { id: 'hobbies-5', text: 'Print a small zine of the finished series', done: false }
         ]}
       ],
-      weeklyItems: [ { day: 'Sun', label: 'Guitar practice' } ],
+      weeklyItems: [ { id: 'hobbies-wk-1', day: 'Sun', label: 'Guitar practice' } ],
       milestones: [
-        { date: '2026-12-15', label: 'Photo series complete' }
+        { id: 'hobbies-ms-1', date: '2026-12-15', label: 'Photo series complete', done: false }
       ]
     },
     {
-      id: 'learning', num: '06', title: 'Learning & Development', status: 'watch',
+      id: 'learning', title: 'Learning & Development', status: 'watch',
       summary: 'Professional CPD is on track; personal coding practice is slipping most weeks.',
       target: 'Chartership CPD hours met + one shipped personal project',
       goal: 'Keep sharpening the professional edge while building a second, unrelated skill for its own value.',
       priority: 'Medium', cadence: 'Weekly', sequencing: 'Ongoing',
+      notes: '',
       objectiveGroups: [
         { group: 'Professional', items: [
           { id: 'learning-1', text: 'Log CPD hours weekly, Friday', done: true },
@@ -1396,17 +1424,18 @@
           { id: 'learning-5', text: 'Ship one small personal build this year', done: false }
         ]}
       ],
-      weeklyItems: [ { day: 'Tue', label: 'Study block' }, { day: 'Fri', label: 'CPD log' } ],
+      weeklyItems: [ { id: 'learning-wk-1', day: 'Tue', label: 'Study block' }, { id: 'learning-wk-2', day: 'Fri', label: 'CPD log' } ],
       milestones: [
-        { date: '2026-11-01', label: 'Chartership CPD hours reviewed' }
+        { id: 'learning-ms-1', date: '2026-11-01', label: 'Chartership CPD hours reviewed', done: false }
       ]
     },
     {
-      id: 'adventure', num: '07', title: 'Adventure & Travel', status: 'good',
+      id: 'adventure', title: 'Adventure & Travel', status: 'good',
       summary: 'One trip booked, one planned; the longer wishlist isn’t sequenced yet.',
       target: '2 named trips banked per year; wishlist sequencing begun',
       goal: 'Bank real, dated trips now while sequencing the bigger wishlist in over time.',
       priority: 'Medium', cadence: 'Occasional / Seasonal', sequencing: 'Yr 1–2',
+      notes: '',
       objectiveGroups: [
         { group: 'Named Trips', items: [
           { id: 'adventure-1', text: 'Book flights — Portugal, May 2026', done: true },
@@ -1419,16 +1448,17 @@
       ],
       weeklyItems: [],
       milestones: [
-        { date: '2026-05-14', label: 'Trip — Portugal' },
-        { date: '2026-10-03', label: 'Trip — Japan' }
+        { id: 'adventure-ms-1', date: '2026-05-14', label: 'Trip — Portugal', done: false },
+        { id: 'adventure-ms-2', date: '2026-10-03', label: 'Trip — Japan', done: false }
       ]
     },
     {
-      id: 'sidehustle', num: '08', title: 'Side Hustle', status: 'hold',
+      id: 'sidehustle', title: 'Side Hustle', status: 'hold',
       summary: 'Deliberately parked — deposit fund and marathon training take priority for now.',
       target: 'Revisit viability at the Yr 2–3 checkpoint',
       goal: 'Keep good ideas alive on paper without letting them compete with higher-priority years.',
       priority: 'Low', cadence: 'Parked — quarterly glance only', sequencing: 'Yr 2–3 (revisit)',
+      notes: '',
       objectiveGroups: [
         { group: 'Why Parked', items: [
           { id: 'sidehustle-1', text: 'Confirmed it would compete directly with deposit + training time — logged, no action needed', done: true }
@@ -1445,15 +1475,16 @@
       ],
       weeklyItems: [],
       milestones: [
-        { date: '2027-06-01', label: 'Yr 2–3 reactivation review' }
+        { id: 'sidehustle-ms-1', date: '2027-06-01', label: 'Yr 2–3 reactivation review', done: false }
       ]
     },
     {
-      id: 'family', num: '09', title: 'Family Planning', status: 'watch',
+      id: 'family', title: 'Family Planning', status: 'watch',
       summary: 'Key timing conversation has been had; the decision anchors the rest of the sequencing.',
       target: 'Shared decision on timing by the Yr 1 review',
       goal: 'Make time-sensitive family decisions deliberately and early, since everything else sequences around them.',
       priority: 'High', cadence: 'One-off decision, then ongoing', sequencing: 'Yr 1',
+      notes: '',
       objectiveGroups: [
         { group: 'Decision', items: [
           { id: 'family-1', text: 'Have the timing conversation openly', done: true },
@@ -1464,12 +1495,41 @@
           { id: 'family-4', text: 'Review housing suitability against the timeline', done: false }
         ]}
       ],
-      weeklyItems: [ { day: 'Sun', label: 'Check-in' } ],
+      weeklyItems: [ { id: 'family-wk-1', day: 'Sun', label: 'Check-in' } ],
       milestones: [
-        { date: '2026-09-01', label: 'Yr 1 family planning review' }
+        { id: 'family-ms-1', date: '2026-09-01', label: 'Yr 1 family planning review', done: false }
       ]
     }
   ];
+
+  const CARDS_KEY = 'lp.cards';
+  function loadCards(){
+    const stored = Store.get(CARDS_KEY, null);
+    if(stored && Array.isArray(stored) && stored.length) return stored;
+    const seeded = deepClone(DEFAULT_CARDS);
+    Store.set(CARDS_KEY, seeded);
+    return seeded;
+  }
+  function persistCards(){ Store.set(CARDS_KEY, LP.cards); }
+  LP.persistCards = persistCards;
+
+  LP.cards = loadCards();
+
+  LP.currentDetailCardId = null;
+
+  /* Central hook: call after ANY mutation to LP.cards (add/edit/delete
+     a card, or edit its objectives/weekly items/milestones). Persists
+     and refreshes every view that reads from card data. Deliberately
+     does NOT re-render the currently-open detail view's own edit
+     fields — those mutate in place so typing never loses focus. */
+  function onCardsChanged(){
+    persistCards();
+    renderWorkPackages();
+    if(typeof renderScheduleMicro === 'function') renderScheduleMicro();
+    if(typeof renderScheduleMacro === 'function') renderScheduleMacro();
+    if(typeof renderSequencing === 'function') renderSequencing();
+  }
+  LP.onCardsChanged = onCardsChanged;
 
   const STATUS_LABEL = { good: 'On Track', watch: 'Watch', hold: 'Hold' };
 
@@ -1486,25 +1546,30 @@
   /* ============================================================
      PHASE 1 — Work Package overview cards (read-only)
      ============================================================ */
+  function cardNum(cardId){
+    const idx = LP.cards.findIndex(function(c){ return c.id === cardId; });
+    return String(idx + 1).padStart(2, '0');
+  }
+
   function renderWorkPackages(){
     const grid = document.getElementById('workpackages-grid');
     if(!grid) return;
-    grid.innerHTML = LP.cards.map(function(c){
+    grid.innerHTML = LP.cards.map(function(c, i){
       return (
         '<button type="button" class="card pkg-card status-' + c.status + '" data-card-id="' + c.id + '">' +
           '<div class="pkg-top">' +
-            '<span class="pkg-num">WP ' + c.num + '</span>' +
+            '<span class="pkg-num">WP ' + String(i + 1).padStart(2, '0') + '</span>' +
             statusPillHTML(c.status) +
           '</div>' +
           '<h3>' + escapeHTML(c.title) + '</h3>' +
           '<p class="pkg-summary">' + escapeHTML(c.summary) + '</p>' +
           '<div class="pkg-target">' +
             '<div class="micro-label">Target</div>' +
-            '<div class="val">' + escapeHTML(c.target) + '</div>' +
+            '<div class="val">' + escapeHTML(c.target || '—') + '</div>' +
           '</div>' +
         '</button>'
       );
-    }).join('');
+    }).join('') + '<button type="button" class="card pkg-card pkg-card-add" id="add-workpackage-btn">+ Add Work Package</button>';
   }
 
   function priorityPillHTML(priority){
@@ -1531,8 +1596,9 @@
   function openDetail(cardId){
     const c = cardById(cardId);
     if(!c) return;
+    LP.currentDetailCardId = cardId;
 
-    document.getElementById('detail-num').textContent = 'WP ' + c.num;
+    document.getElementById('detail-num').textContent = 'WP ' + cardNum(cardId);
     document.getElementById('detail-title').textContent = c.title;
     document.getElementById('detail-status-pill').innerHTML = statusPillHTML(c.status);
 
@@ -1544,10 +1610,9 @@
 
     document.getElementById('detail-objectives').innerHTML = c.objectiveGroups.map(function(g){
       const rows = g.items.map(function(item){
-        const done = Store.get('lp.obj.' + item.id, item.done);
         return (
-          '<div class="obj-row' + (done ? ' done' : '') + '" data-obj-row="' + item.id + '">' +
-            '<input type="checkbox" id="chk-' + item.id + '" data-obj-id="' + item.id + '"' + (done ? ' checked' : '') + '>' +
+          '<div class="obj-row' + (item.done ? ' done' : '') + '" data-obj-row="' + item.id + '">' +
+            '<input type="checkbox" id="chk-' + item.id + '" data-obj-id="' + item.id + '"' + (item.done ? ' checked' : '') + '>' +
             '<label for="chk-' + item.id + '">' + escapeHTML(item.text) + '</label>' +
           '</div>'
         );
@@ -1561,12 +1626,22 @@
     }).join('');
 
     const notesBox = document.getElementById('detail-notes-box');
-    notesBox.value = Store.get('lp.notes.' + cardId, '');
+    notesBox.value = c.notes || '';
     notesBox.dataset.cardId = cardId;
 
     showView('detail');
   }
   LP.openDetail = openDetail;
+
+  function findObjectiveItem(cardId, objId){
+    const c = cardById(cardId);
+    if(!c) return null;
+    for(const g of c.objectiveGroups){
+      const item = g.items.find(function(it){ return it.id === objId; });
+      if(item) return item;
+    }
+    return null;
+  }
 
   function wireDetailEvents(){
     document.getElementById('detail-back').addEventListener('click', function(){
@@ -1577,7 +1652,10 @@
       const target = e.target;
       if(target.matches('input[type="checkbox"][data-obj-id]')){
         const objId = target.dataset.objId;
-        Store.set('lp.obj.' + objId, target.checked);
+        const item = findObjectiveItem(LP.currentDetailCardId, objId);
+        if(!item) return;
+        item.done = target.checked;
+        persistCards();
         const row = document.querySelector('[data-obj-row="' + objId + '"]');
         if(row) row.classList.toggle('done', target.checked);
       }
@@ -1585,10 +1663,23 @@
 
     document.getElementById('detail-notes-box').addEventListener('input', function(e){
       const cardId = e.target.dataset.cardId;
-      if(cardId) Store.set('lp.notes.' + cardId, e.target.value);
+      const c = cardById(cardId);
+      if(c){ c.notes = e.target.value; persistCards(); }
     });
 
     document.getElementById('workpackages-grid').addEventListener('click', function(e){
+      const addBtn = e.target.closest('#add-workpackage-btn');
+      if(addBtn){
+        const c = {
+          id: genId('card'), title: 'New Work Package', status: 'watch',
+          summary: '', target: '', goal: '', priority: 'Medium', cadence: '', sequencing: '',
+          notes: '', objectiveGroups: [], weeklyItems: [], milestones: []
+        };
+        LP.cards.push(c);
+        onCardsChanged();
+        openDetail(c.id);
+        return;
+      }
       const btn = e.target.closest('[data-card-id]');
       if(btn) openDetail(btn.dataset.cardId);
     });
