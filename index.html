@@ -478,6 +478,63 @@
     color: var(--text-muted);
     margin-top: 8px;
   }
+
+  /* ============================================================
+     SAVINGS PROGRAMME (Phase 3)
+     ============================================================ */
+  .field{ display: flex; flex-direction: column; gap: 7px; }
+  .field .micro-label{ padding-left: 1px; }
+
+  .savings-inputs-grid{
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 900px){ .savings-inputs-grid{ grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px){ .savings-inputs-grid{ grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-row{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  @media (max-width: 620px){ .stat-row{ grid-template-columns: 1fr; } }
+  .stat-block{
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-block .micro-label{ margin-bottom: 6px; }
+  .stat-block .stat-val{
+    font-family: var(--font-mono);
+    font-size: 21px;
+    color: var(--text);
+  }
+  .stat-block.low .stat-val{ color: var(--status-hold); }
+  .stat-block.mid .stat-val{ color: var(--accent); }
+  .stat-block.high .stat-val{ color: var(--status-good); }
+  .stat-block .stat-sub{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .table-wrap{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+  .table-wrap table{ min-width: 480px; }
+  .table-wrap th, .table-wrap td{ padding: 12px 16px; }
+  .table-wrap tbody tr:last-child td{ border-bottom: none; }
 </style>
 </head>
 <body>
@@ -516,6 +573,65 @@
 
 <main class="wrap">
   <section id="view-home" class="view">
+
+    <section class="savings-section" id="section-savings">
+      <div class="section-head"><span class="num">03</span><h2>Savings Programme</h2><span class="rule"></span></div>
+      <p class="section-sub">Editable scenario — adjust to your real numbers. Balances round to the nearest £100; this is a range exercise, not a prediction.</p>
+
+      <div class="savings-inputs-grid">
+        <div class="field">
+          <label class="micro-label" for="input-currentSavings">Current Savings (£)</label>
+          <input type="number" id="input-currentSavings" min="0" step="50">
+        </div>
+        <div class="field">
+          <label class="micro-label" for="input-monthlyLow">Monthly Rate — Low (£)</label>
+          <input type="number" id="input-monthlyLow" min="0" step="10">
+        </div>
+        <div class="field">
+          <label class="micro-label" for="input-monthlyHigh">Monthly Rate — High (£)</label>
+          <input type="number" id="input-monthlyHigh" min="0" step="10">
+        </div>
+        <div class="field">
+          <label class="micro-label" for="input-usdSideIncome">USD Side-Income ($/mo)</label>
+          <input type="number" id="input-usdSideIncome" min="0" step="10">
+        </div>
+        <div class="field">
+          <label class="micro-label" for="input-fxRate">FX Rate (USD → GBP)</label>
+          <input type="number" id="input-fxRate" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label class="micro-label" for="input-depositTarget">Deposit Target (£)</label>
+          <input type="number" id="input-depositTarget" min="0" step="50">
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-block low">
+          <div class="micro-label">Monthly Contribution — Low</div>
+          <div class="stat-val" id="stat-monthly-low">—</div>
+          <div class="stat-sub">Weak FX case + base low rate</div>
+        </div>
+        <div class="stat-block mid">
+          <div class="micro-label">Monthly Contribution — Mid</div>
+          <div class="stat-val" id="stat-monthly-mid">—</div>
+          <div class="stat-sub">Avg of low/high + FX at input rate</div>
+        </div>
+        <div class="stat-block high">
+          <div class="micro-label">Monthly Contribution — High</div>
+          <div class="stat-val" id="stat-monthly-high">—</div>
+          <div class="stat-sub">Strong FX case + base high rate</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Year</th><th class="num">Low</th><th class="num">Mid</th><th class="num">High</th><th>Status</th></tr>
+          </thead>
+          <tbody id="savings-table-body"><!-- rendered --></tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="pkg-section" id="section-workpackages">
       <div class="section-head"><span class="num">07</span><h2>Work Packages — Life Areas</h2><span class="rule"></span></div>
@@ -939,9 +1055,127 @@
     }
   }
 
+  /* ============================================================
+     PHASE 3 — Savings Programme (scenario forecast)
+     ============================================================ */
+  const SAVINGS_DEFAULTS = {
+    currentSavings: 8500,
+    monthlyLow: 450,
+    monthlyHigh: 900,
+    usdSideIncome: 300,
+    fxRate: 0.79,
+    depositTarget: 45000
+  };
+  const FX_SWING = 0.05; // +/- band applied to the FX-exposed slice for low/high cases
+
+  function loadSavingsInputs(){
+    return Store.get('lp.savings.inputs', SAVINGS_DEFAULTS);
+  }
+  function saveSavingsInputs(inputs){
+    Store.set('lp.savings.inputs', inputs);
+  }
+  LP.loadSavingsInputs = loadSavingsInputs;
+
+  function computeMonthlyRates(inputs){
+    const low = inputs.monthlyLow + inputs.usdSideIncome * Math.max(0, inputs.fxRate - FX_SWING);
+    const mid = (inputs.monthlyLow + inputs.monthlyHigh) / 2 + inputs.usdSideIncome * inputs.fxRate;
+    const high = inputs.monthlyHigh + inputs.usdSideIncome * (inputs.fxRate + FX_SWING);
+    return { low: low, mid: mid, high: high };
+  }
+  LP.computeMonthlyRates = computeMonthlyRates;
+
+  function roundToHundred(n){ return Math.round(n / 100) * 100; }
+  function fmtGBP(n){ return '£' + Math.round(n).toLocaleString('en-GB'); }
+  function fmtGBPRounded(n){ return '£' + roundToHundred(n).toLocaleString('en-GB'); }
+  LP.fmtGBP = fmtGBP;
+  LP.fmtGBPRounded = fmtGBPRounded;
+
+  function targetStatusForYear(midBalance, highBalance, target){
+    if(midBalance >= target) return { status: 'good', label: 'Target Met' };
+    if(highBalance >= target) return { status: 'watch', label: 'Achievable (High Case)' };
+    return { status: 'hold', label: 'Below Target' };
+  }
+  LP.targetStatusForYear = targetStatusForYear;
+
+  function projectedBalance(currentSavings, monthlyRate, months){
+    return currentSavings + monthlyRate * months;
+  }
+  LP.projectedBalance = projectedBalance;
+
+  function readSavingsInputsFromDOM(){
+    function num(id, fallback){
+      const el = document.getElementById(id);
+      const v = parseFloat(el.value);
+      return isNaN(v) ? fallback : v;
+    }
+    return {
+      currentSavings: num('input-currentSavings', 0),
+      monthlyLow: num('input-monthlyLow', 0),
+      monthlyHigh: num('input-monthlyHigh', 0),
+      usdSideIncome: num('input-usdSideIncome', 0),
+      fxRate: num('input-fxRate', 0),
+      depositTarget: num('input-depositTarget', 0)
+    };
+  }
+
+  function populateSavingsInputsDOM(inputs){
+    document.getElementById('input-currentSavings').value = inputs.currentSavings;
+    document.getElementById('input-monthlyLow').value = inputs.monthlyLow;
+    document.getElementById('input-monthlyHigh').value = inputs.monthlyHigh;
+    document.getElementById('input-usdSideIncome').value = inputs.usdSideIncome;
+    document.getElementById('input-fxRate').value = inputs.fxRate;
+    document.getElementById('input-depositTarget').value = inputs.depositTarget;
+  }
+
+  function renderSavingsProgramme(inputs){
+    const rates = computeMonthlyRates(inputs);
+
+    document.getElementById('stat-monthly-low').textContent = fmtGBP(rates.low) + ' / mo';
+    document.getElementById('stat-monthly-mid').textContent = fmtGBP(rates.mid) + ' / mo';
+    document.getElementById('stat-monthly-high').textContent = fmtGBP(rates.high) + ' / mo';
+
+    const rows = [1, 2, 3].map(function(yr){
+      const months = yr * 12;
+      const low = projectedBalance(inputs.currentSavings, rates.low, months);
+      const mid = projectedBalance(inputs.currentSavings, rates.mid, months);
+      const high = projectedBalance(inputs.currentSavings, rates.high, months);
+      const s = targetStatusForYear(mid, high, inputs.depositTarget);
+      return (
+        '<tr>' +
+          '<td>Year ' + yr + '</td>' +
+          '<td class="num">' + fmtGBPRounded(low) + '</td>' +
+          '<td class="num">' + fmtGBPRounded(mid) + '</td>' +
+          '<td class="num">' + fmtGBPRounded(high) + '</td>' +
+          '<td><span class="pill status-' + s.status + '"><span class="dot"></span>' + s.label + '</span></td>' +
+        '</tr>'
+      );
+    }).join('');
+    document.getElementById('savings-table-body').innerHTML = rows;
+
+    return rates;
+  }
+  LP.renderSavingsProgramme = renderSavingsProgramme;
+
+  function initSavingsProgramme(){
+    const inputs = loadSavingsInputs();
+    populateSavingsInputsDOM(inputs);
+    renderSavingsProgramme(inputs);
+
+    const ids = ['input-currentSavings','input-monthlyLow','input-monthlyHigh','input-usdSideIncome','input-fxRate','input-depositTarget'];
+    ids.forEach(function(id){
+      document.getElementById(id).addEventListener('input', function(){
+        const fresh = readSavingsInputsFromDOM();
+        saveSavingsInputs(fresh);
+        renderSavingsProgramme(fresh);
+        if(typeof LP.onSavingsInputsChanged === 'function') LP.onSavingsInputsChanged(fresh);
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
     wireDetailEvents();
+    initSavingsProgramme();
   });
 
 })();
