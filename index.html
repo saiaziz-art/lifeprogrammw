@@ -865,6 +865,84 @@
   }
 
   /* ============================================================
+     BANK STATEMENT IMPORT (client-side CSV parse + categorize)
+     ============================================================ */
+  .bank-import-controls{
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .bank-import-filename{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .bank-import-error{
+    border: 1px solid color-mix(in srgb, var(--status-hold) 45%, var(--line));
+    border-left: 3px solid var(--status-hold);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .bank-import-error strong{ color: var(--text); }
+  .bank-import-summary{
+    display: flex; gap: 24px; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted);
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .bank-import-summary strong{ color: var(--text); font-size: 15px; display: block; margin-top: 2px; }
+  .bank-import-cols{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 820px){ .bank-import-cols{ grid-template-columns: 1fr; } }
+  .cat-row{
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .cat-row:last-child{ border-bottom: none; }
+  .cat-row .cat-name{ color: var(--text); }
+  .cat-row .cat-count{ color: var(--text-muted); font-family: var(--font-mono); font-size: 10.5px; margin-left: 6px; }
+  .cat-row .cat-total{ font-family: var(--font-mono); color: var(--text); }
+  .uncat-row{
+    display: grid;
+    grid-template-columns: 1fr 90px 140px;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+  }
+  .uncat-row:last-child{ border-bottom: none; }
+  .uncat-row .uncat-desc{
+    color: var(--text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .uncat-row .uncat-amt{ font-family: var(--font-mono); color: var(--text); text-align: right; }
+  .uncat-row select{ font-size: 11px; padding: 5px 22px 5px 8px; }
+  .bank-import-empty{
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); opacity: 0.7;
+  }
+  .bank-import-applied{
+    margin-top: 14px;
+    border: 1px solid color-mix(in srgb, var(--status-good) 40%, var(--line));
+    border-left: 3px solid var(--status-good);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .bank-import-applied strong{ color: var(--text); }
+
+  /* ============================================================
      CASHFLOW FORECAST CHART (Phase 4)
      ============================================================ */
   .toggle-tabs{
@@ -1349,6 +1427,36 @@
           <span class="ie-target-detail" id="ie-target-detail">—</span>
         </div>
         <div class="ie-recon-delta" id="ie-recon-delta">—</div>
+      </div>
+
+      <div class="bank-import">
+        <div class="section-head" style="margin-top:36px;"><span class="num">IMPORT</span><h2>Bank Statement Import</h2><span class="rule"></span></div>
+        <p class="section-sub">Upload a CSV export from your bank to see last month's spending by category and sync it into Expenditure above. Parsed entirely in your browser — the file is never uploaded anywhere, and this app makes no external network calls.</p>
+
+        <div class="bank-import-controls">
+          <label class="btn" id="bank-import-label" for="bank-import-file">Choose CSV File</label>
+          <input type="file" id="bank-import-file" accept=".csv,text/csv" hidden>
+          <span class="bank-import-filename" id="bank-import-filename">No file selected.</span>
+        </div>
+        <div class="bank-import-error" id="bank-import-error" hidden></div>
+
+        <div id="bank-import-results" hidden>
+          <div class="bank-import-summary" id="bank-import-summary"></div>
+
+          <div class="bank-import-cols">
+            <div>
+              <div class="micro-label" style="margin-bottom:8px;">Spending by Category</div>
+              <div id="bank-import-categories"><!-- rendered --></div>
+            </div>
+            <div>
+              <div class="micro-label" style="margin-bottom:8px;">Uncategorized Transactions</div>
+              <div id="bank-import-uncategorized"><!-- rendered --></div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-accent" id="bank-import-apply">Apply Category Totals to Expenditure</button>
+          <div class="bank-import-applied" id="bank-import-applied" hidden></div>
+        </div>
       </div>
     </section>
 
@@ -2566,6 +2674,281 @@
   };
 
   /* ============================================================
+     BANK STATEMENT IMPORT — client-side CSV parse + keyword
+     categorization. No network calls, no external AI: the file
+     never leaves the browser. Rules are simple substring matches
+     against the transaction description, editable via the
+     uncategorized-transaction assignment flow, persisted so future
+     imports remember them.
+     ============================================================ */
+  const BANK_CATEGORIES = [
+    'Groceries', 'Transport', 'Dining & Takeout', 'Subscriptions', 'Utilities',
+    'Rent/Mortgage', 'Insurance', 'Health & Fitness', 'Shopping', 'Entertainment', 'Other'
+  ];
+  const BANK_DEFAULT_RULES = [
+    { keyword: 'TESCO', category: 'Groceries' }, { keyword: 'SAINSBURY', category: 'Groceries' },
+    { keyword: 'ASDA', category: 'Groceries' }, { keyword: 'MORRISON', category: 'Groceries' },
+    { keyword: 'ALDI', category: 'Groceries' }, { keyword: 'LIDL', category: 'Groceries' },
+    { keyword: 'WAITROSE', category: 'Groceries' }, { keyword: 'WHOLE FOODS', category: 'Groceries' },
+    { keyword: 'WHOLEFOODS', category: 'Groceries' }, { keyword: 'TRADER JOE', category: 'Groceries' },
+    { keyword: 'KROGER', category: 'Groceries' }, { keyword: 'SAFEWAY', category: 'Groceries' },
+    { keyword: 'WALMART', category: 'Groceries' }, { keyword: 'COSTCO', category: 'Groceries' },
+    { keyword: 'PUBLIX', category: 'Groceries' },
+    { keyword: 'UBER', category: 'Transport' }, { keyword: 'LYFT', category: 'Transport' },
+    { keyword: 'SHELL', category: 'Transport' }, { keyword: 'EXXON', category: 'Transport' },
+    { keyword: 'CHEVRON', category: 'Transport' }, { keyword: 'TRANSIT', category: 'Transport' },
+    { keyword: 'PARKING', category: 'Transport' }, { keyword: 'TRAINLINE', category: 'Transport' },
+    { keyword: 'AMTRAK', category: 'Transport' }, { keyword: 'DELTA', category: 'Transport' },
+    { keyword: 'STARBUCKS', category: 'Dining & Takeout' }, { keyword: 'COSTA', category: 'Dining & Takeout' },
+    { keyword: 'MCDONALD', category: 'Dining & Takeout' }, { keyword: 'PIZZA', category: 'Dining & Takeout' },
+    { keyword: 'DELIVEROO', category: 'Dining & Takeout' }, { keyword: 'UBEREATS', category: 'Dining & Takeout' },
+    { keyword: 'UBER EATS', category: 'Dining & Takeout' }, { keyword: 'DOORDASH', category: 'Dining & Takeout' },
+    { keyword: 'GRUBHUB', category: 'Dining & Takeout' }, { keyword: 'RESTAURANT', category: 'Dining & Takeout' },
+    { keyword: 'CAFE', category: 'Dining & Takeout' },
+    { keyword: 'NETFLIX', category: 'Subscriptions' }, { keyword: 'SPOTIFY', category: 'Subscriptions' },
+    { keyword: 'APPLE.COM', category: 'Subscriptions' }, { keyword: 'DISNEY', category: 'Subscriptions' },
+    { keyword: 'HULU', category: 'Subscriptions' }, { keyword: 'AMAZON PRIME', category: 'Subscriptions' },
+    { keyword: 'ICLOUD', category: 'Subscriptions' },
+    { keyword: 'ELECTRIC', category: 'Utilities' }, { keyword: 'COMCAST', category: 'Utilities' },
+    { keyword: 'VERIZON', category: 'Utilities' }, { keyword: 'AT&T', category: 'Utilities' },
+    { keyword: 'BRITISH GAS', category: 'Utilities' }, { keyword: 'OCTOPUS ENERGY', category: 'Utilities' },
+    { keyword: 'WATER CORP', category: 'Utilities' }, { keyword: 'INTERNET', category: 'Utilities' },
+    { keyword: 'RENT', category: 'Rent/Mortgage' }, { keyword: 'MORTGAGE', category: 'Rent/Mortgage' },
+    { keyword: 'LANDLORD', category: 'Rent/Mortgage' },
+    { keyword: 'INSURANCE', category: 'Insurance' }, { keyword: 'GEICO', category: 'Insurance' },
+    { keyword: 'STATE FARM', category: 'Insurance' }, { keyword: 'ALLSTATE', category: 'Insurance' },
+    { keyword: 'GYM', category: 'Health & Fitness' }, { keyword: 'FITNESS', category: 'Health & Fitness' },
+    { keyword: 'PHARMACY', category: 'Health & Fitness' }, { keyword: 'CVS', category: 'Health & Fitness' },
+    { keyword: 'WALGREENS', category: 'Health & Fitness' }, { keyword: 'BOOTS', category: 'Health & Fitness' },
+    { keyword: 'AMAZON', category: 'Shopping' }, { keyword: 'TARGET', category: 'Shopping' },
+    { keyword: 'EBAY', category: 'Shopping' }, { keyword: 'ASOS', category: 'Shopping' },
+    { keyword: 'CINEMA', category: 'Entertainment' }, { keyword: 'AMC', category: 'Entertainment' },
+    { keyword: 'STEAM', category: 'Entertainment' }, { keyword: 'PLAYSTATION', category: 'Entertainment' },
+    { keyword: 'XBOX', category: 'Entertainment' }
+  ];
+  const BANK_RULES_KEY = 'lp.bank.rules';
+
+  function loadBankRules(){ return Store.get(BANK_RULES_KEY, []); }
+  function saveBankRule(keyword, category){
+    const rules = loadBankRules();
+    rules.push({ keyword: keyword, category: category });
+    Store.set(BANK_RULES_KEY, rules);
+  }
+  function normalizeLabel(s){ return s.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+  function categorizeTxn(desc){
+    const upper = desc.toUpperCase();
+    const custom = loadBankRules();
+    for(let i = custom.length - 1; i >= 0; i--){
+      if(upper.includes(custom[i].keyword)) return custom[i].category;
+    }
+    for(let i = 0; i < BANK_DEFAULT_RULES.length; i++){
+      if(upper.includes(BANK_DEFAULT_RULES[i].keyword)) return BANK_DEFAULT_RULES[i].category;
+    }
+    return null;
+  }
+  function extractKeyword(desc){
+    const m = desc.toUpperCase().match(/[A-Z][A-Z0-9&.]{2,}/);
+    return m ? m[0] : desc.toUpperCase().slice(0, 12);
+  }
+
+  function parseCSV(text){
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for(let i = 0; i < text.length; i++){
+      const ch = text[i];
+      if(inQuotes){
+        if(ch === '"'){
+          if(text[i + 1] === '"'){ field += '"'; i++; }
+          else inQuotes = false;
+        } else field += ch;
+      } else if(ch === '"'){
+        inQuotes = true;
+      } else if(ch === ','){
+        row.push(field); field = '';
+      } else if(ch === '\n' || ch === '\r'){
+        if(ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        if(row.length > 1 || row[0] !== ''){ rows.push(row); }
+        row = [];
+      } else {
+        field += ch;
+      }
+    }
+    if(field !== '' || row.length){ row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function detectBankColumns(header){
+    const lower = header.map(function(h){ return h.trim().toLowerCase(); });
+    function findIdx(patterns){ return lower.findIndex(function(h){ return patterns.some(function(p){ return h.includes(p); }); }); }
+    return {
+      date: findIdx(['date']),
+      desc: findIdx(['description', 'narrative', 'details', 'merchant', 'payee', 'memo']),
+      amount: findIdx(['amount', 'value']),
+      debit: findIdx(['debit', 'withdrawal', 'money out', 'paid out']),
+      credit: findIdx(['credit', 'deposit', 'money in', 'paid in'])
+    };
+  }
+
+  function buildBankTransactions(rows){
+    if(rows.length < 2) return { error: 'The file has no data rows below the header.' };
+    const header = rows[0];
+    const cols = detectBankColumns(header);
+    if(cols.date === -1 || cols.desc === -1){
+      return { error: 'Could not find Date and Description columns in the header row.' };
+    }
+    if(cols.amount === -1 && (cols.debit === -1 || cols.credit === -1)){
+      return { error: 'Could not find an Amount column, or separate Debit/Credit columns.' };
+    }
+    const txns = [];
+    for(let i = 1; i < rows.length; i++){
+      const r = rows[i];
+      if(!r || r.every(function(c){ return c.trim() === ''; })) continue;
+      const desc = (r[cols.desc] || '').trim();
+      if(!desc) continue;
+      let amount;
+      if(cols.amount !== -1){
+        amount = parseFloat((r[cols.amount] || '0').replace(/[^0-9.\-]/g, ''));
+      } else {
+        const debit = parseFloat((r[cols.debit] || '0').replace(/[^0-9.\-]/g, '')) || 0;
+        const credit = parseFloat((r[cols.credit] || '0').replace(/[^0-9.\-]/g, '')) || 0;
+        amount = credit - debit;
+      }
+      if(isNaN(amount) || amount === 0) continue;
+      txns.push({ date: (r[cols.date] || '').trim(), description: desc, amount: amount });
+    }
+    if(!txns.length) return { error: 'No valid transaction rows were found after the header.' };
+    return { transactions: txns };
+  }
+
+  LP.bankImport = null;
+
+  function renderBankImportResults(){
+    const txns = LP.bankImport.transactions;
+    const expenseTxns = txns.filter(function(t){ return t.amount < 0; });
+    const incomeTxns = txns.filter(function(t){ return t.amount > 0; });
+    const categorized = expenseTxns.filter(function(t){ return t.category; });
+    const uncategorized = expenseTxns.filter(function(t){ return !t.category; });
+
+    const totals = {};
+    categorized.forEach(function(t){
+      totals[t.category] = totals[t.category] || { total: 0, count: 0 };
+      totals[t.category].total += Math.abs(t.amount);
+      totals[t.category].count += 1;
+    });
+    const totalIncome = incomeTxns.reduce(function(s, t){ return s + t.amount; }, 0);
+    const totalExpense = expenseTxns.reduce(function(s, t){ return s + Math.abs(t.amount); }, 0);
+
+    document.getElementById('bank-import-summary').innerHTML =
+      '<div>TRANSACTIONS<strong>' + txns.length + '</strong></div>' +
+      '<div>TOTAL SPENT<strong>' + fmtGBP(totalExpense) + '</strong></div>' +
+      '<div>TOTAL INCOME<strong>' + fmtGBP(totalIncome) + '</strong></div>' +
+      '<div>UNCATEGORIZED<strong>' + uncategorized.length + '</strong></div>';
+
+    const catKeys = Object.keys(totals).sort(function(a, b){ return totals[b].total - totals[a].total; });
+    document.getElementById('bank-import-categories').innerHTML = catKeys.length
+      ? catKeys.map(function(cat){
+          return '<div class="cat-row"><span class="cat-name">' + escapeHTML(cat) + '<span class="cat-count">(' + totals[cat].count + ')</span></span><span class="cat-total">' + fmtGBP(totals[cat].total) + '</span></div>';
+        }).join('')
+      : '<div class="bank-import-empty">Nothing categorized yet — assign some transactions on the right.</div>';
+
+    document.getElementById('bank-import-uncategorized').innerHTML = uncategorized.length
+      ? uncategorized.map(function(t){
+          const idx = txns.indexOf(t);
+          return (
+            '<div class="uncat-row">' +
+              '<span class="uncat-desc" title="' + escapeHTML(t.description) + '">' + escapeHTML(t.description) + '</span>' +
+              '<span class="uncat-amt">' + fmtGBP(Math.abs(t.amount)) + '</span>' +
+              '<select data-assign-idx="' + idx + '"><option value="">Assign…</option>' +
+                BANK_CATEGORIES.map(function(c){ return '<option value="' + escapeHTML(c) + '">' + escapeHTML(c) + '</option>'; }).join('') +
+              '</select>' +
+            '</div>'
+          );
+        }).join('')
+      : '<div class="bank-import-empty">Everything matched a category.</div>';
+
+    document.getElementById('bank-import-results').hidden = false;
+    document.getElementById('bank-import-applied').hidden = true;
+  }
+
+  function processBankFile(file){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const rows = parseCSV(String(e.target.result));
+      const result = buildBankTransactions(rows);
+      const errEl = document.getElementById('bank-import-error');
+      const resultsEl = document.getElementById('bank-import-results');
+      if(result.error){
+        errEl.hidden = false;
+        errEl.innerHTML = '<strong>Could not read this file as a bank statement.</strong> ' + escapeHTML(result.error) + ' Expected a CSV with a header row containing Date, Description, and Amount (or separate Debit/Credit) columns — this is standard on most banks\' "export transactions" option.';
+        resultsEl.hidden = true;
+        return;
+      }
+      errEl.hidden = true;
+      const txns = result.transactions.map(function(t){
+        return { date: t.date, description: t.description, amount: t.amount, category: t.amount > 0 ? 'Income' : categorizeTxn(t.description) };
+      });
+      LP.bankImport = { transactions: txns };
+      renderBankImportResults();
+    };
+    reader.onerror = function(){
+      const errEl = document.getElementById('bank-import-error');
+      errEl.hidden = false;
+      errEl.innerHTML = '<strong>Could not read this file.</strong> Try re-exporting it as a plain CSV.';
+      document.getElementById('bank-import-results').hidden = true;
+    };
+    reader.readAsText(file);
+  }
+
+  function initBankImport(){
+    document.getElementById('bank-import-file').addEventListener('change', function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      document.getElementById('bank-import-filename').textContent = file.name;
+      processBankFile(file);
+    });
+
+    document.getElementById('bank-import-uncategorized').addEventListener('change', function(e){
+      if(!e.target.matches('select[data-assign-idx]')) return;
+      const idx = parseInt(e.target.dataset.assignIdx, 10);
+      const category = e.target.value;
+      if(!category) return;
+      const txn = LP.bankImport.transactions[idx];
+      txn.category = category;
+      saveBankRule(extractKeyword(txn.description), category);
+      renderBankImportResults();
+    });
+
+    document.getElementById('bank-import-apply').addEventListener('click', function(){
+      if(!LP.bankImport) return;
+      const txns = LP.bankImport.transactions.filter(function(t){ return t.amount < 0 && t.category; });
+      if(!txns.length) return;
+      const totals = {};
+      txns.forEach(function(t){ totals[t.category] = (totals[t.category] || 0) + Math.abs(t.amount); });
+
+      const changes = [];
+      Object.keys(totals).forEach(function(cat){
+        const amt = Math.round(totals[cat] * 100) / 100;
+        const existing = LP.ieState.expenses.find(function(row){ return normalizeLabel(row.label) === normalizeLabel(cat); });
+        if(existing){
+          changes.push(cat + ': ' + fmtGBP(existing.amount) + ' → ' + fmtGBP(amt));
+          existing.amount = amt;
+        } else {
+          LP.ieState.expenses.push({ id: genRowId(), label: cat, amount: amt });
+          changes.push(cat + ': added at ' + fmtGBP(amt));
+        }
+      });
+      persistIE();
+      refreshIE();
+
+      const appliedEl = document.getElementById('bank-import-applied');
+      appliedEl.hidden = false;
+      appliedEl.innerHTML = '<strong>Applied to Expenditure.</strong> ' + escapeHTML(changes.join(' · '));
+    });
+  }
+
+  /* ============================================================
      PHASE 4b — Cashflow Forecast chart (inline SVG)
      ============================================================ */
   const CHART_COLORS = {
@@ -2979,6 +3362,7 @@
     wireDetailEvents();
     initSavingsProgramme();
     initIE();
+    initBankImport();
     initCashflowChart();
     initSchedule();
     initSequencing();
