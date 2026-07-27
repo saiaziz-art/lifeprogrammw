@@ -1238,20 +1238,20 @@
 
     <section class="savings-section" id="section-savings">
       <div class="section-head"><span class="num">03</span><h2>Savings Programme</h2><span class="rule"></span></div>
-      <p class="section-sub">Editable scenario — adjust to your real numbers. Balances round to the nearest £100; this is a range exercise, not a prediction.</p>
+      <p class="section-sub">Editable scenario — adjust to your real numbers. Balances round to the nearest $100; this is a range exercise, not a prediction.</p>
       <div class="section-actions"><button type="button" class="btn btn-ghost" id="savings-reset">Reset Inputs to Defaults</button></div>
 
       <div class="savings-inputs-grid">
         <div class="field">
-          <label class="micro-label" for="input-currentSavings">Current Savings (£)</label>
+          <label class="micro-label" for="input-currentSavings">Current Savings ($)</label>
           <input type="number" id="input-currentSavings" min="0" step="50">
         </div>
         <div class="field">
-          <label class="micro-label" for="input-monthlyLow">Monthly Rate — Low (£)</label>
+          <label class="micro-label" for="input-monthlyLow">Monthly Rate — Low ($)</label>
           <input type="number" id="input-monthlyLow" min="0" step="10">
         </div>
         <div class="field">
-          <label class="micro-label" for="input-monthlyHigh">Monthly Rate — High (£)</label>
+          <label class="micro-label" for="input-monthlyHigh">Monthly Rate — High ($)</label>
           <input type="number" id="input-monthlyHigh" min="0" step="10">
         </div>
         <div class="field">
@@ -1263,7 +1263,7 @@
           <input type="number" id="input-fxRate" min="0" step="0.01">
         </div>
         <div class="field">
-          <label class="micro-label" for="input-depositTarget">Deposit Target (£)</label>
+          <label class="micro-label" for="input-depositTarget">Deposit Target ($)</label>
           <input type="number" id="input-depositTarget" min="0" step="50">
         </div>
       </div>
@@ -1391,17 +1391,17 @@
         </div>
         <div class="ref-item">
           <div class="micro-label">ISA Annual Allowance</div>
-          <div class="stat-val">£20,000</div>
+          <div class="stat-val">$20,000</div>
           <div class="ref-note">Total across all ISA types per tax year. Confirm the current allowance before relying on it.</div>
         </div>
         <div class="ref-item">
           <div class="micro-label">Lifetime ISA (LISA)</div>
           <div class="stat-val">25% bonus</div>
-          <div class="ref-note">Up to £4,000/yr contribution (part of the £20k allowance) toward a first home or retirement.</div>
+          <div class="ref-note">Up to $4,000/yr contribution (part of the $20k allowance) toward a first home or retirement.</div>
         </div>
         <div class="ref-item">
           <div class="micro-label">Pension Annual Allowance</div>
-          <div class="stat-val">£60,000</div>
+          <div class="stat-val">$60,000</div>
           <div class="ref-note">Tax-relieved pension contribution limit per year for most earners. Tapers for very high incomes.</div>
         </div>
         <div class="ref-item">
@@ -1573,7 +1573,7 @@
     {
       id: 'savings', title: 'Savings / Deposits', status: 'watch',
       summary: 'Deposit fund building at mid-case rate; FX drift is the main swing factor.',
-      target: '£45,000 deposit fund by Dec 2028',
+      target: '$45,000 deposit fund by Dec 2028',
       goal: 'Build the deposit fund on schedule without sacrificing family time or health commitments.',
       priority: 'High', cadence: 'Weekly review (Sun)', sequencing: 'Yr 1–3',
       notes: '',
@@ -2312,8 +2312,8 @@
   LP.computeMonthlyRates = computeMonthlyRates;
 
   function roundToHundred(n){ return Math.round(n / 100) * 100; }
-  function fmtGBP(n){ return '£' + Math.round(n).toLocaleString('en-GB'); }
-  function fmtGBPRounded(n){ return '£' + roundToHundred(n).toLocaleString('en-GB'); }
+  function fmtGBP(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  function fmtGBPRounded(n){ return '$' + roundToHundred(n).toLocaleString('en-US'); }
   LP.fmtGBP = fmtGBP;
   LP.fmtGBPRounded = fmtGBPRounded;
 
@@ -2582,8 +2582,8 @@
 
   function chartAxisLabelShort(n){
     const v = Math.round(n);
-    if(Math.abs(v) >= 1000) return '£' + (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k';
-    return '£' + v;
+    if(Math.abs(v) >= 1000) return '$' + (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k';
+    return '$' + v;
   }
 
   LP.cashflowMode = 'monthly';
