@@ -315,7 +315,20 @@
   @media (max-width: 640px){
     .masthead-inner{ padding: 32px 18px 24px; }
     .wrap{ padding: 0 18px 72px; }
-    .meta-item{ padding-right: 16px; margin-right: 16px; }
+    .meta-item, .detail-meta-row .meta-item{
+      border-right: none;
+      margin-right: 0;
+      padding-right: 0;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      flex-basis: 100%;
+    }
+    .meta-item:last-child, .detail-meta-row .meta-item:last-child{
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
   }
 
   /* ============================================================
@@ -769,6 +782,123 @@
     margin-right: 6px;
     vertical-align: middle;
   }
+
+  /* ============================================================
+     MARKET REFERENCE PANEL (Phase 6)
+     ============================================================ */
+  .ref-snapshot-bar{
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .ref-snapshot-bar .pill{ color: var(--text-muted); }
+  .reference-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 900px){ .reference-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px){ .reference-grid{ grid-template-columns: 1fr; } }
+  .ref-item{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .ref-item .stat-val{
+    font-family: var(--font-mono);
+    font-size: 22px;
+    color: var(--accent);
+    margin: 6px 0 6px;
+  }
+  .ref-item .ref-note{
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .disclaimer-box{
+    border: 1px solid color-mix(in srgb, var(--status-hold) 45%, var(--line));
+    border-left: 3px solid var(--status-hold);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .disclaimer-box strong{ color: var(--text); }
+
+  /* ============================================================
+     SEQUENCING (Phase 6)
+     ============================================================ */
+  .phase-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px){ .phase-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px){ .phase-grid{ grid-template-columns: 1fr; } }
+  .phase-block{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .phase-range{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .phase-block ul{
+    margin: 0; padding: 0; list-style: none;
+  }
+  .phase-block li{
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 7px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  }
+  .phase-block li:last-child{ border-bottom: none; }
+  .phase-block li .area-tag{
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  /* ============================================================
+     NON-NEGOTIABLES (Phase 6)
+     ============================================================ */
+  .nn-card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--status-hold);
+    border-radius: var(--radius);
+    padding: 6px 22px;
+  }
+  .nn-list{ margin: 0; padding: 0; list-style: none; counter-reset: nn; }
+  .nn-list li{
+    counter-increment: nn;
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .nn-list li:last-child{ border-bottom: none; }
+  .nn-list li::before{
+    content: counter(nn, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--status-hold);
+    flex: 0 0 auto;
+  }
 </style>
 </head>
 <body>
@@ -940,10 +1070,117 @@
       <p class="chart-note">Dashed line marks the deposit target from the Savings Programme.</p>
     </section>
 
+    <section class="reference-section" id="section-reference">
+      <div class="section-head"><span class="num">06</span><h2>Savings &amp; Market Reference</h2><span class="rule"></span></div>
+      <p class="section-sub">General, dated background — not personalised advice, and not a live feed. Figures are a manual snapshot and will go stale.</p>
+
+      <div class="ref-snapshot-bar">
+        <span class="pill"><span class="dot"></span>Manual Snapshot: 01 Jan 2026</span>
+        <span class="pill"><span class="dot"></span>Next Review Due: Jul 2026</span>
+      </div>
+
+      <div class="reference-grid">
+        <div class="ref-item">
+          <div class="micro-label">Bank of England Base Rate</div>
+          <div class="stat-val">4.25%</div>
+          <div class="ref-note">Set by MPC; reviewed roughly every 6 weeks. Check boe.org.uk for the current figure.</div>
+        </div>
+        <div class="ref-item">
+          <div class="micro-label">Typical Easy-Access Savings</div>
+          <div class="stat-val">~4.0–4.6%</div>
+          <div class="ref-note">Range across easy-access and Cash ISA products at snapshot date. Shop around — this moves often.</div>
+        </div>
+        <div class="ref-item">
+          <div class="micro-label">ISA Annual Allowance</div>
+          <div class="stat-val">£20,000</div>
+          <div class="ref-note">Total across all ISA types per tax year. Confirm the current allowance before relying on it.</div>
+        </div>
+        <div class="ref-item">
+          <div class="micro-label">Lifetime ISA (LISA)</div>
+          <div class="stat-val">25% bonus</div>
+          <div class="ref-note">Up to £4,000/yr contribution (part of the £20k allowance) toward a first home or retirement.</div>
+        </div>
+        <div class="ref-item">
+          <div class="micro-label">Pension Annual Allowance</div>
+          <div class="stat-val">£60,000</div>
+          <div class="ref-note">Tax-relieved pension contribution limit per year for most earners. Tapers for very high incomes.</div>
+        </div>
+        <div class="ref-item">
+          <div class="micro-label">CPI Inflation (reference)</div>
+          <div class="stat-val">~2–3%</div>
+          <div class="ref-note">Illustrative only — check ons.gov.uk for the latest published figure before using it in real planning.</div>
+        </div>
+      </div>
+
+      <div class="disclaimer-box">
+        <strong>Not financial advice.</strong> This panel is a general, educational, manually-dated snapshot for personal context only — it is not personalised financial advice, and the app makes no live external calls to keep it current. Rates, allowances, and thresholds change; verify anything here against a primary source (HMRC, Bank of England, your provider) before making a decision.
+      </div>
+    </section>
+
     <section class="pkg-section" id="section-workpackages">
       <div class="section-head"><span class="num">07</span><h2>Work Packages — Life Areas</h2><span class="rule"></span></div>
       <p class="section-sub">Nine life areas, run like work packages — each with a real status flag, a one-line target, and a drill-down for the detail.</p>
       <div class="card-grid" id="workpackages-grid"><!-- rendered from LP.cards --></div>
+    </section>
+
+    <section class="sequencing-section" id="section-sequencing">
+      <div class="section-head"><span class="num">08</span><h2>Sequencing</h2><span class="rule"></span></div>
+      <p class="section-sub">What's actually active across the whole programme, phase by phase.</p>
+
+      <div class="phase-grid">
+        <div class="phase-block">
+          <div class="phase-range">Yr 1–2</div>
+          <ul>
+            <li><span class="area-tag">Family Planning</span>Have the timing conversation and align on a target window.</li>
+            <li><span class="area-tag">Savings / Deposits</span>Standing order live; weekly review habit established.</li>
+            <li><span class="area-tag">Health + Fitness</span>Marathon base + build phases; half marathon tune-up race.</li>
+            <li><span class="area-tag">Community</span>Rebuild the weekly anchor; join one club for the autumn term.</li>
+            <li><span class="area-tag">Adventure &amp; Travel</span>Portugal and Japan trips banked and taken.</li>
+            <li><span class="area-tag">Hobbies</span>Guitar habit running; photo series shot and finished.</li>
+          </ul>
+        </div>
+        <div class="phase-block">
+          <div class="phase-range">Yr 2–3</div>
+          <ul>
+            <li><span class="area-tag">Savings / Deposits</span>Fund crosses roughly the halfway point.</li>
+            <li><span class="area-tag">Health + Fitness</span>Peak marathon block, then race day.</li>
+            <li><span class="area-tag">Side Hustle</span>Reactivation review against parked criteria.</li>
+            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Yr 2 structural decision review — location and home project.</li>
+            <li><span class="area-tag">Learning &amp; Development</span>CPD and personal technical practice continue as steady background load.</li>
+          </ul>
+        </div>
+        <div class="phase-block">
+          <div class="phase-range">Yr 3–4</div>
+          <ul>
+            <li><span class="area-tag">Savings / Deposits</span>Approaching the deposit target; scenario re-checked against real rates.</li>
+            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Home project go/no-go executed.</li>
+            <li><span class="area-tag">Health, Learning, Hobbies, Community</span>Held steady as ongoing maintenance, not active projects.</li>
+          </ul>
+        </div>
+        <div class="phase-block">
+          <div class="phase-range">Yr 4–6</div>
+          <ul>
+            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Revisit the "life at 40" vision document.</li>
+            <li><span class="area-tag">Whole Programme</span>Full review of every work package's status, cadence, and sequencing.</li>
+            <li><span class="area-tag">Side Hustle</span>Reassess dormancy honestly — reactivate, extend, or retire the idea bank.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="nn-section" id="section-nonnegotiables">
+      <div class="section-head"><span class="num">09</span><h2>Non-Negotiables</h2><span class="rule"></span></div>
+      <p class="section-sub">Genuinely few, genuinely non-negotiable. These override everything above when they conflict.</p>
+
+      <div class="nn-card">
+        <ol class="nn-list">
+          <li>Family time and health commitments are never sacrificed to hit a savings rate.</li>
+          <li>No side hustle activity starts until the deposit fund and marathon training are both on track.</li>
+          <li>One full rest day every week — no exceptions, no "just this once."</li>
+          <li>Every bonus or windfall goes to the deposit fund before it goes anywhere else.</li>
+          <li>The family planning timing decision is not deferred past the Yr 1 review.</li>
+        </ol>
+      </div>
     </section>
 
   </section>
