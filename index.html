@@ -97,6 +97,8 @@
     font-size: 13.5px;
     max-width: 62ch;
   }
+  .section-actions{ margin: -14px 0 20px; }
+  .section-actions .btn{ font-size: 11px; padding: 7px 12px; }
 
   /* Micro-label: uppercase, letter-spaced field name */
   .micro-label{
@@ -310,6 +312,27 @@
   .topnav button:hover{ color: var(--text); }
   .topnav button.active{ color: var(--accent); background: var(--surface-alt); }
 
+  .save-warning-toast{
+    position: fixed;
+    right: 18px; bottom: 18px;
+    z-index: 999;
+    max-width: 320px;
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--status-hold) 45%, var(--line));
+    border-left: 3px solid var(--status-hold);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .save-warning-toast.visible{ opacity: 1; transform: translateY(0); }
+
   footer.colophon{
     max-width: 1180px;
     margin: 0 auto;
@@ -319,6 +342,23 @@
     font-size: 11px;
     letter-spacing: 0.03em;
     border-top: 1px solid var(--line);
+  }
+  .colophon-row{
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 14px; flex-wrap: wrap;
+  }
+  .export-fallback{
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    background: var(--surface);
+  }
+  .export-fallback p{ margin: 0 0 10px; }
+  .export-fallback textarea{
+    font-size: 11px;
+    min-height: 140px;
+    margin-bottom: 10px;
   }
 
   @media (max-width: 640px){
@@ -868,7 +908,10 @@
     gap: 10px;
   }
   @media (max-width: 760px){
-    .week-grid{ grid-template-columns: repeat(2, 1fr); }
+    /* A shrunk 2-col grid leaves an orphaned last cell and forces
+       scanning two axes at once — a single full-width column per day
+       reads as a straightforward list instead. */
+    .week-grid{ grid-template-columns: 1fr; }
   }
   .week-day{
     border: 1px solid var(--line);
@@ -1183,6 +1226,7 @@
     <section class="savings-section" id="section-savings">
       <div class="section-head"><span class="num">03</span><h2>Savings Programme</h2><span class="rule"></span></div>
       <p class="section-sub">Editable scenario — adjust to your real numbers. Balances round to the nearest £100; this is a range exercise, not a prediction.</p>
+      <div class="section-actions"><button type="button" class="btn btn-ghost" id="savings-reset">Reset Inputs to Defaults</button></div>
 
       <div class="savings-inputs-grid">
         <div class="field">
@@ -1250,6 +1294,7 @@
     <section class="ie-section" id="section-ie">
       <div class="section-head"><span class="num">04</span><h2>Income &amp; Expenditure</h2><span class="rule"></span></div>
       <p class="section-sub">Fully customizable line items. Add or remove rows freely — totals and the monthly cashflow chart update immediately.</p>
+      <div class="section-actions"><button type="button" class="btn btn-ghost" id="ie-reset">Reset Lines to Defaults</button></div>
 
       <div class="ie-grid">
         <div class="ie-panel">
@@ -1361,6 +1406,7 @@
     <section class="pkg-section" id="section-workpackages">
       <div class="section-head"><span class="num">07</span><h2>Work Packages — Life Areas</h2><span class="rule"></span></div>
       <p class="section-sub">Nine life areas, run like work packages — each with a real status flag, a one-line target, and a drill-down for the detail.</p>
+      <div class="section-actions"><button type="button" class="btn btn-ghost" id="cards-reset">Reset Cards to Defaults</button></div>
       <div class="card-grid" id="workpackages-grid"><!-- rendered from LP.cards --></div>
     </section>
 
@@ -1436,7 +1482,15 @@
 </main>
 
 <footer class="colophon">
-  5YLP — PERSONAL PLANNING DOCUMENT — NOT FOR DISTRIBUTION — DATA STORED LOCALLY VIA WINDOW.STORAGE
+  <div class="colophon-row">
+    <span>5YLP — PERSONAL PLANNING DOCUMENT — NOT FOR DISTRIBUTION — DATA STORED LOCALLY VIA WINDOW.STORAGE</span>
+    <button type="button" class="btn btn-ghost" id="export-data-btn">Export Data (Copy JSON)</button>
+  </div>
+  <div class="export-fallback" id="export-fallback" hidden>
+    <p>Clipboard access isn't available here — copy the JSON below manually.</p>
+    <textarea id="export-fallback-box" rows="8" readonly></textarea>
+    <button type="button" class="btn btn-ghost" id="export-fallback-close">Close</button>
+  </div>
 </footer>
 
 <script>
@@ -1447,6 +1501,22 @@
   /* ============================================================
      STORAGE HELPER — wraps window.storage (personal, JSON-serialized)
      ============================================================ */
+  function showSaveWarning(message){
+    let el = document.getElementById('save-warning-toast');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'save-warning-toast';
+      el.className = 'save-warning-toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      document.body.appendChild(el);
+    }
+    el.textContent = message || 'Save failed — this change may not persist.';
+    el.classList.add('visible');
+    clearTimeout(showSaveWarning._t);
+    showSaveWarning._t = setTimeout(function(){ el.classList.remove('visible'); }, 4500);
+  }
+
   const Store = {
     get(key, fallback){
       try{
@@ -1465,6 +1535,7 @@
         window.storage.set(key, JSON.stringify(value));
       }catch(e){
         console.warn('LP storage.set failed for', key, e);
+        showSaveWarning();
       }
     }
   };
@@ -2212,7 +2283,7 @@
   const FX_SWING = 0.05; // +/- band applied to the FX-exposed slice for low/high cases
 
   function loadSavingsInputs(){
-    return Store.get('lp.savings.inputs', SAVINGS_DEFAULTS);
+    return Store.get('lp.savings.inputs', null) || deepClone(SAVINGS_DEFAULTS);
   }
   function saveSavingsInputs(inputs){
     Store.set('lp.savings.inputs', inputs);
@@ -2354,9 +2425,13 @@
   LP.ieState = null;
 
   function loadIEState(){
+    // Store.get's fallback must never be handed back live — the caller
+    // (add/remove handlers) mutates the returned arrays in place, which
+    // would otherwise permanently corrupt the IE_DEFAULT_* constants
+    // themselves the first time a row was added, breaking reset-to-defaults.
     return {
-      income: Store.get('lp.ie.income', IE_DEFAULT_INCOME),
-      expenses: Store.get('lp.ie.expenses', IE_DEFAULT_EXPENSES)
+      income: Store.get('lp.ie.income', null) || deepClone(IE_DEFAULT_INCOME),
+      expenses: Store.get('lp.ie.expenses', null) || deepClone(IE_DEFAULT_EXPENSES)
     };
   }
   function persistIE(){
@@ -2815,6 +2890,72 @@
     });
   }
 
+  /* ============================================================
+     DATA SAFETY NET — scoped reset actions + JSON export
+     ============================================================ */
+  function initResetButtons(){
+    document.getElementById('cards-reset').addEventListener('click', function(){
+      if(confirm('Reset all Work Packages to their defaults? This discards every card you\'ve added or edited, including objectives, weekly items, and milestones.')){
+        LP.cards = deepClone(DEFAULT_CARDS);
+        onCardsChanged();
+      }
+    });
+    document.getElementById('savings-reset').addEventListener('click', function(){
+      if(confirm('Reset Savings Programme inputs to their defaults?')){
+        const fresh = deepClone(SAVINGS_DEFAULTS);
+        saveSavingsInputs(fresh);
+        populateSavingsInputsDOM(fresh);
+        renderSavingsProgramme(fresh);
+        if(typeof LP.onSavingsInputsChanged === 'function') LP.onSavingsInputsChanged(fresh);
+      }
+    });
+    document.getElementById('ie-reset').addEventListener('click', function(){
+      if(confirm('Reset Income & Expenditure lines to their defaults?')){
+        LP.ieState = { income: deepClone(IE_DEFAULT_INCOME), expenses: deepClone(IE_DEFAULT_EXPENSES) };
+        persistIE();
+        refreshIE();
+      }
+    });
+  }
+
+  function gatherAllData(){
+    return {
+      exportedAt: new Date().toISOString(),
+      cards: LP.cards,
+      nonNegotiables: LP.nnState,
+      savingsInputs: loadSavingsInputs(),
+      incomeExpenditure: { income: LP.ieState.income, expenses: LP.ieState.expenses }
+    };
+  }
+
+  function showExportFallback(json){
+    const panel = document.getElementById('export-fallback');
+    const box = document.getElementById('export-fallback-box');
+    box.value = json;
+    panel.hidden = false;
+    box.focus();
+    box.select();
+  }
+
+  function initExport(){
+    document.getElementById('export-data-btn').addEventListener('click', function(){
+      const json = JSON.stringify(gatherAllData(), null, 2);
+      const btn = this;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(json).then(function(){
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(function(){ btn.textContent = original; }, 2000);
+        }, function(){ showExportFallback(json); });
+      } else {
+        showExportFallback(json);
+      }
+    });
+    document.getElementById('export-fallback-close').addEventListener('click', function(){
+      document.getElementById('export-fallback').hidden = true;
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
     wireDetailEvents();
@@ -2824,6 +2965,8 @@
     initSchedule();
     initSequencing();
     initNonNegotiables();
+    initResetButtons();
+    initExport();
   });
 
 })();
