@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<!-- 5-YEAR LIFE PROGRAMME — build v0.1 — Phase 0: Foundation (shell / design system / masthead) -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-Year Life Programme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DESIGN SYSTEM — tokens
+     ============================================================ */
+  :root{
+    --bg: #12161d;
+    --surface: #1b212b;
+    --surface-alt: #222937;
+    --line: #323b4a;
+    --text: #e9e4d8;
+    --text-muted: #8b93a3;
+    --accent: #c08a3e;
+    --accent-dim: #8f6a34;
+    --status-good: #7ea38a;
+    --status-watch: #d1a24a;
+    --status-hold: #c06a4f;
+
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+
+    --radius: 2px;
+  }
+
+  *,*::before,*::after{ box-sizing: border-box; }
+
+  html{ background: var(--bg); }
+
+  body{
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--accent); color: #12161d; }
+
+  a{ color: inherit; }
+
+  /* ============================================================
+     LAYOUT PRIMITIVES
+     ============================================================ */
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 96px;
+  }
+
+  .view{ display: block; }
+  .view[hidden]{ display: none; }
+
+  /* Section header pattern: monospace number + rule + title */
+  .section-head{
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin: 64px 0 22px;
+  }
+  .section-head .num{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    flex: 0 0 auto;
+  }
+  .section-head h2{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0;
+    letter-spacing: -0.01em;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .section-head .rule{
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--line);
+    transform: translateY(2px);
+  }
+  .section-sub{
+    margin: -12px 0 24px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    max-width: 62ch;
+  }
+
+  /* Micro-label: uppercase, letter-spaced field name */
+  .micro-label{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    color: var(--text-muted);
+  }
+
+  /* Card pattern: surface, 1px border, sharp radius, left status bar */
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    position: relative;
+    padding: 20px 20px 20px 22px;
+  }
+  .card::before{
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--text-muted);
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .card.status-good::before{ background: var(--status-good); }
+  .card.status-watch::before{ background: var(--status-watch); }
+  .card.status-hold::before{ background: var(--status-hold); }
+
+  /* Status pill */
+  .pill{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .pill .dot{
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .pill.status-good{ color: var(--status-good); border-color: color-mix(in srgb, var(--status-good) 40%, var(--line)); }
+  .pill.status-watch{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
+  .pill.status-hold{ color: var(--status-hold); border-color: color-mix(in srgb, var(--status-hold) 40%, var(--line)); }
+
+  .pill.priority-high{ color: var(--status-hold); border-color: color-mix(in srgb, var(--status-hold) 40%, var(--line)); }
+  .pill.priority-medium{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
+  .pill.priority-low{ color: var(--text-muted); }
+
+  button{ font-family: var(--font-body); cursor: pointer; }
+
+  .btn{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .btn:hover{ border-color: var(--accent); color: var(--accent); }
+  .btn.btn-accent{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #12161d;
+    font-weight: 600;
+  }
+  .btn.btn-accent:hover{ background: #cd9a52; color: #12161d; }
+  .btn.btn-ghost{ border-color: transparent; color: var(--text-muted); padding: 9px 4px; }
+  .btn.btn-ghost:hover{ color: var(--accent); border-color: transparent; }
+
+  input[type="text"], input[type="number"], input[type="date"], textarea, select{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    width: 100%;
+  }
+  input:focus, textarea:focus, select:focus{
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea{ font-family: var(--font-body); font-size: 14px; resize: vertical; }
+
+  table{ border-collapse: collapse; width: 100%; }
+  th, td{
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  th{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  td.num, th.num{ font-family: var(--font-mono); text-align: right; }
+
+  /* ============================================================
+     MASTHEAD
+     ============================================================ */
+  .masthead{
+    border-bottom: 1px solid var(--line);
+    background:
+      linear-gradient(180deg, rgba(192,138,62,0.06), transparent 60%),
+      var(--bg);
+  }
+  .masthead-inner{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 28px 32px;
+  }
+  .masthead .kicker{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .masthead .kicker::before{
+    content: "";
+    width: 22px; height: 1px;
+    background: var(--accent);
+  }
+  .masthead h1{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.05;
+    margin: 0 0 14px;
+    letter-spacing: -0.015em;
+  }
+  .masthead .mission{
+    font-size: 16px;
+    color: var(--text-muted);
+    max-width: 60ch;
+    margin: 0 0 28px;
+  }
+  .meta-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .meta-item{
+    padding: 14px 26px 14px 0;
+    margin-right: 26px;
+    border-right: 1px solid var(--line);
+    flex: 0 0 auto;
+  }
+  .meta-item:last-child{ border-right: none; }
+  .meta-item .micro-label{ margin-bottom: 5px; }
+  .meta-item .val{
+    font-family: var(--font-mono);
+    font-size: 14.5px;
+  }
+  .meta-item .val.status-good{ color: var(--status-good); }
+  .meta-item .val.status-watch{ color: var(--status-watch); }
+  .meta-item .val.status-hold{ color: var(--status-hold); }
+
+  /* Top nav (in-page view switch, appears once JS views exist) */
+  .topnav{
+    display: flex;
+    gap: 4px;
+    padding: 14px 0 0;
+    flex-wrap: wrap;
+  }
+  .topnav button{
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+  }
+  .topnav button:hover{ color: var(--text); }
+  .topnav button.active{ color: var(--accent); background: var(--surface-alt); }
+
+  footer.colophon{
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 28px 60px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 640px){
+    .masthead-inner{ padding: 32px 18px 24px; }
+    .wrap{ padding: 0 18px 72px; }
+    .meta-item{ padding-right: 16px; margin-right: 16px; }
+  }
+
+  /* ============================================================
+     WORK PACKAGE CARDS (Phase 1)
+     ============================================================ */
+  .card-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 980px){
+    .card-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 620px){
+    .card-grid{ grid-template-columns: 1fr; }
+  }
+
+  .pkg-card{
+    text-align: left;
+    display: block;
+    width: 100%;
+    background: var(--surface);
+    font-family: var(--font-body);
+    color: var(--text);
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .pkg-card:hover{ border-color: var(--accent-dim); }
+  .pkg-card:active{ transform: translateY(1px); }
+
+  .pkg-card .pkg-top{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .pkg-card .pkg-num{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+  .pkg-card h3{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18.5px;
+    margin: 2px 0 10px;
+    letter-spacing: -0.005em;
+  }
+  .pkg-card .pkg-summary{
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 0 14px;
+    min-height: 38px;
+  }
+  .pkg-card .pkg-target{
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .pkg-card .pkg-target .micro-label{ margin-bottom: 4px; }
+  .pkg-card .pkg-target .val{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="kicker">Programme Reference — 5YLP / 01</div>
+    <h1>The 5-Year Life Programme</h1>
+    <p class="mission">A cost-managed approach to the next five years — sequencing savings, health, family, and craft the same way you'd sequence a construction programme: honestly, with real status flags and no float you didn't plan for.</p>
+
+    <div class="meta-row">
+      <div class="meta-item">
+        <div class="micro-label">Programme Start</div>
+        <div class="val">01 Jan 2026</div>
+      </div>
+      <div class="meta-item">
+        <div class="micro-label">Horizon</div>
+        <div class="val">5 Years — to Dec 2030</div>
+      </div>
+      <div class="meta-item">
+        <div class="micro-label">Base Location</div>
+        <div class="val">United Kingdom</div>
+      </div>
+      <div class="meta-item">
+        <div class="micro-label">Overall Status</div>
+        <div class="val status-watch">● Watch</div>
+      </div>
+    </div>
+
+    <nav class="topnav" id="topnav">
+      <!-- populated / wired in later phases -->
+      <button class="active" data-view="home">Home</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-home" class="view">
+
+    <section class="pkg-section" id="section-workpackages">
+      <div class="section-head"><span class="num">07</span><h2>Work Packages — Life Areas</h2><span class="rule"></span></div>
+      <p class="section-sub">Nine life areas, run like work packages — each with a real status flag, a one-line target, and a drill-down for the detail.</p>
+      <div class="card-grid" id="workpackages-grid"><!-- rendered from LP.cards --></div>
+    </section>
+
+  </section>
+</main>
+
+<footer class="colophon">
+  5YLP — PERSONAL PLANNING DOCUMENT — NOT FOR DISTRIBUTION — DATA STORED LOCALLY VIA WINDOW.STORAGE
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  window.LP = window.LP || {};
+
+  /* ============================================================
+     STORAGE HELPER — wraps window.storage (personal, JSON-serialized)
+     ============================================================ */
+  const Store = {
+    get(key, fallback){
+      try{
+        if(!window.storage || typeof window.storage.get !== 'function') return fallback;
+        const raw = window.storage.get(key);
+        if(raw === undefined || raw === null) return fallback;
+        return (typeof raw === 'string') ? JSON.parse(raw) : raw;
+      }catch(e){
+        console.warn('LP storage.get failed for', key, e);
+        return fallback;
+      }
+    },
+    set(key, value){
+      try{
+        if(!window.storage || typeof window.storage.set !== 'function') return;
+        window.storage.set(key, JSON.stringify(value));
+      }catch(e){
+        console.warn('LP storage.set failed for', key, e);
+      }
+    }
+  };
+  LP.Store = Store;
+
+  /* ============================================================
+     LIFE-AREA DATA — 9 work packages
+     Each objective item id must be globally unique (used as the
+     persisted checkbox storage key: `lp.obj.<id>`).
+     ============================================================ */
+  LP.cards = [
+    {
+      id: 'savings', num: '01', title: 'Savings / Deposits', status: 'watch',
+      summary: 'Deposit fund building at mid-case rate; FX drift is the main swing factor.',
+      target: '£45,000 deposit fund by Dec 2028',
+      goal: 'Build the deposit fund on schedule without sacrificing family time or health commitments.',
+      priority: 'High', cadence: 'Weekly review (Sun)', sequencing: 'Yr 1–3',
+      objectiveGroups: [
+        { group: 'Deposit Fund', items: [
+          { id: 'savings-1', text: 'Set up standing order into deposit ISA on payday', done: true },
+          { id: 'savings-2', text: 'Review savings rate vs 3-yr forecast every Sunday', done: false },
+          { id: 'savings-3', text: 'Reassess FX rate assumption quarterly', done: false }
+        ]},
+        { group: 'Spending Discipline', items: [
+          { id: 'savings-4', text: 'Cap discretionary spend category monthly', done: false },
+          { id: 'savings-5', text: 'Move any bonus/windfall straight to the deposit pot', done: false }
+        ]}
+      ],
+      weeklyItems: [ { day: 'Sun', label: 'Money review' } ],
+      milestones: [
+        { date: '2027-06-01', label: 'Deposit fund reaches 50% of target' },
+        { date: '2028-12-01', label: 'Deposit target met (mid case)' }
+      ]
+    },
+    {
+      id: 'goals', num: '02', title: 'Long-Term + Short-Term Goals', status: 'watch',
+      summary: 'Structural life decisions parked pending deposit progress and family timing.',
+      target: 'Confirm long-term location and home project scope by Yr 2',
+      goal: 'Make the big structural decisions deliberately, on their own timeline, rather than by default.',
+      priority: 'High', cadence: 'Quarterly review', sequencing: 'Yr 1–5+',
+      objectiveGroups: [
+        { group: 'Long-Term Location', items: [
+          { id: 'goals-1', text: 'List non-negotiables for a long-term base location', done: true },
+          { id: 'goals-2', text: 'Visit 2 candidate areas this year', done: false },
+          { id: 'goals-3', text: 'Revisit the decision at the Yr 2 review', done: false }
+        ]},
+        { group: 'Home Project', items: [
+          { id: 'goals-4', text: 'Get 3 ballpark quotes for extension/renovation', done: false },
+          { id: 'goals-5', text: 'Decide buy-and-improve vs. move by Yr 2', done: false }
+        ]},
+        { group: 'Longer-Horizon Vision', items: [
+          { id: 'goals-6', text: 'Draft a one-page "life at 40" vision document', done: false }
+        ]}
+      ],
+      weeklyItems: [],
+      milestones: [
+        { date: '2027-01-15', label: 'Yr 2 structural decision review' },
+        { date: '2028-06-01', label: 'Home project go/no-go' }
+      ]
+    },
+    {
+      id: 'health', num: '03', title: 'Health + Fitness', status: 'good',
+      summary: 'Strength split and running base both holding; marathon training on schedule.',
+      target: 'Sub-4:15 marathon, September 2027',
+      goal: 'Build durable strength and endurance that outlasts any single event.',
+      priority: 'High', cadence: 'Daily / Weekly', sequencing: 'Ongoing',
+      objectiveGroups: [
+        { group: 'Strength Split (weekly)', items: [
+          { id: 'health-1', text: 'Mon — Push session', done: true },
+          { id: 'health-2', text: 'Wed — Pull session', done: true },
+          { id: 'health-3', text: 'Fri — Legs session', done: false }
+        ]},
+        { group: 'Cardio / Endurance', items: [
+          { id: 'health-4', text: 'Tue — easy 5k run', done: true },
+          { id: 'health-5', text: 'Sat — long run (progress weekly distance)', done: false }
+        ]},
+        { group: 'Diet & Supplements', items: [
+          { id: 'health-6', text: 'Hit daily protein target (~160g)', done: false },
+          { id: 'health-7', text: 'Take vitamin D + creatine daily', done: false },
+          { id: 'health-8', text: 'Batch-cook Sunday for the week ahead', done: false }
+        ]},
+        { group: 'Hard Physical Challenge — Marathon, Sept 2027', items: [
+          { id: 'health-9', text: 'Base phase: build to 40km/week (Yr1 Q1–Q2)', done: true },
+          { id: 'health-10', text: 'Build phase: add tempo + long-run progression (Yr1 Q3–Q4)', done: false },
+          { id: 'health-11', text: 'Peak phase: 16-week marathon block (Yr2 Q1–Q2)', done: false },
+          { id: 'health-12', text: 'Taper and race (Sept 2027)', done: false }
+        ]}
+      ],
+      weeklyItems: [
+        { day: 'Mon', label: 'Push' }, { day: 'Tue', label: 'Run 5k' },
+        { day: 'Wed', label: 'Pull' }, { day: 'Fri', label: 'Legs' },
+        { day: 'Sat', label: 'Long run' }
+      ],
+      milestones: [
+        { date: '2026-09-01', label: 'Half marathon (tune-up race)' },
+        { date: '2027-09-12', label: 'Marathon — target sub-4:15' }
+      ]
+    },
+    {
+      id: 'community', num: '04', title: 'Community', status: 'hold',
+      summary: 'Weekly five-a-side lapsed for six weeks; deeper group commitment not yet chosen.',
+      target: 'Consistent weekly social anchor + one active group membership',
+      goal: 'Keep a low-effort recurring social anchor alive, and go deeper into one real group.',
+      priority: 'Medium', cadence: 'Weekly', sequencing: 'Ongoing',
+      objectiveGroups: [
+        { group: 'Weekly Anchor', items: [
+          { id: 'community-1', text: 'Rebook the Thursday five-a-side slot', done: false },
+          { id: 'community-2', text: 'Set a recurring calendar hold so it stops lapsing', done: false }
+        ]},
+        { group: 'Deeper Group Activity', items: [
+          { id: 'community-3', text: 'Shortlist 3 clubs/societies to try', done: true },
+          { id: 'community-4', text: 'Attend a taster session', done: false },
+          { id: 'community-5', text: 'Commit to one for a full term', done: false }
+        ]}
+      ],
+      weeklyItems: [ { day: 'Thu', label: '5-a-side' } ],
+      milestones: [
+        { date: '2026-09-01', label: 'Join one club/society for the autumn term' }
+      ]
+    },
+    {
+      id: 'hobbies', num: '05', title: 'Hobbies', status: 'good',
+      summary: 'Guitar practice is a steady weekly habit; the photography project is ticking along.',
+      target: 'Finish one personal photo series by year end',
+      goal: 'Protect time for things done purely for their own sake — no income pressure attached.',
+      priority: 'Medium', cadence: 'Weekly / Monthly', sequencing: 'Yr 1',
+      objectiveGroups: [
+        { group: 'Guitar', items: [
+          { id: 'hobbies-1', text: 'Practice 20 min, Sunday evening', done: true },
+          { id: 'hobbies-2', text: 'Learn one new song per month', done: false }
+        ]},
+        { group: 'Photography', items: [
+          { id: 'hobbies-3', text: 'Shoot one roll/session per month', done: true },
+          { id: 'hobbies-4', text: 'Edit and sequence into a 20-image series', done: false },
+          { id: 'hobbies-5', text: 'Print a small zine of the finished series', done: false }
+        ]}
+      ],
+      weeklyItems: [ { day: 'Sun', label: 'Guitar practice' } ],
+      milestones: [
+        { date: '2026-12-15', label: 'Photo series complete' }
+      ]
+    },
+    {
+      id: 'learning', num: '06', title: 'Learning & Development', status: 'watch',
+      summary: 'Professional CPD is on track; personal coding practice is slipping most weeks.',
+      target: 'Chartership CPD hours met + one shipped personal project',
+      goal: 'Keep sharpening the professional edge while building a second, unrelated skill for its own value.',
+      priority: 'Medium', cadence: 'Weekly', sequencing: 'Ongoing',
+      objectiveGroups: [
+        { group: 'Professional', items: [
+          { id: 'learning-1', text: 'Log CPD hours weekly, Friday', done: true },
+          { id: 'learning-2', text: 'Read one industry article/report per week', done: true },
+          { id: 'learning-3', text: 'Attend one professional event per quarter', done: false }
+        ]},
+        { group: 'Personal / Technical', items: [
+          { id: 'learning-4', text: 'Coding practice — Tue + Sat block', done: false },
+          { id: 'learning-5', text: 'Ship one small personal build this year', done: false }
+        ]}
+      ],
+      weeklyItems: [ { day: 'Tue', label: 'Study block' }, { day: 'Fri', label: 'CPD log' } ],
+      milestones: [
+        { date: '2026-11-01', label: 'Chartership CPD hours reviewed' }
+      ]
+    },
+    {
+      id: 'adventure', num: '07', title: 'Adventure & Travel', status: 'good',
+      summary: 'One trip booked, one planned; the longer wishlist isn’t sequenced yet.',
+      target: '2 named trips banked per year; wishlist sequencing begun',
+      goal: 'Bank real, dated trips now while sequencing the bigger wishlist in over time.',
+      priority: 'Medium', cadence: 'Occasional / Seasonal', sequencing: 'Yr 1–2',
+      objectiveGroups: [
+        { group: 'Named Trips', items: [
+          { id: 'adventure-1', text: 'Book flights — Portugal, May 2026', done: true },
+          { id: 'adventure-2', text: 'Plan itinerary — Japan, Oct 2026', done: false }
+        ]},
+        { group: 'Wishlist Sequencing', items: [
+          { id: 'adventure-3', text: 'Rank wishlist (Peru, New Zealand, Norway fjords)', done: false },
+          { id: 'adventure-4', text: 'Slot one wishlist trip into the Yr 2 budget', done: false }
+        ]}
+      ],
+      weeklyItems: [],
+      milestones: [
+        { date: '2026-05-14', label: 'Trip — Portugal' },
+        { date: '2026-10-03', label: 'Trip — Japan' }
+      ]
+    },
+    {
+      id: 'sidehustle', num: '08', title: 'Side Hustle', status: 'hold',
+      summary: 'Deliberately parked — deposit fund and marathon training take priority for now.',
+      target: 'Revisit viability at the Yr 2–3 checkpoint',
+      goal: 'Keep good ideas alive on paper without letting them compete with higher-priority years.',
+      priority: 'Low', cadence: 'Parked — quarterly glance only', sequencing: 'Yr 2–3 (revisit)',
+      objectiveGroups: [
+        { group: 'Why Parked', items: [
+          { id: 'sidehustle-1', text: 'Confirmed it would compete directly with deposit + training time — logged, no action needed', done: true }
+        ]},
+        { group: 'Reactivation Criteria', items: [
+          { id: 'sidehustle-2', text: 'Deposit fund reaches ≥ 70% of target', done: false },
+          { id: 'sidehustle-3', text: 'Marathon block is complete', done: false },
+          { id: 'sidehustle-4', text: 'Still genuinely interested at the Yr 2 review', done: false }
+        ]},
+        { group: 'Idea Bank (not active)', items: [
+          { id: 'sidehustle-5', text: 'Consulting side-gig using QS / cost-management skills', done: false },
+          { id: 'sidehustle-6', text: 'Small digital product built from cost-planning templates', done: false }
+        ]}
+      ],
+      weeklyItems: [],
+      milestones: [
+        { date: '2027-06-01', label: 'Yr 2–3 reactivation review' }
+      ]
+    },
+    {
+      id: 'family', num: '09', title: 'Family Planning', status: 'watch',
+      summary: 'Key timing conversation has been had; the decision anchors the rest of the sequencing.',
+      target: 'Shared decision on timing by the Yr 1 review',
+      goal: 'Make time-sensitive family decisions deliberately and early, since everything else sequences around them.',
+      priority: 'High', cadence: 'One-off decision, then ongoing', sequencing: 'Yr 1',
+      objectiveGroups: [
+        { group: 'Decision', items: [
+          { id: 'family-1', text: 'Have the timing conversation openly', done: true },
+          { id: 'family-2', text: 'Align on a target window with partner', done: false }
+        ]},
+        { group: 'Practical Readiness', items: [
+          { id: 'family-3', text: 'Understand the cost impact on the savings programme', done: false },
+          { id: 'family-4', text: 'Review housing suitability against the timeline', done: false }
+        ]}
+      ],
+      weeklyItems: [ { day: 'Sun', label: 'Check-in' } ],
+      milestones: [
+        { date: '2026-09-01', label: 'Yr 1 family planning review' }
+      ]
+    }
+  ];
+
+  const STATUS_LABEL = { good: 'On Track', watch: 'Watch', hold: 'Hold' };
+
+  function statusPillHTML(status){
+    return '<span class="pill status-' + status + '"><span class="dot"></span>' + STATUS_LABEL[status] + '</span>';
+  }
+
+  function escapeHTML(s){
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  /* ============================================================
+     PHASE 1 — Work Package overview cards (read-only)
+     ============================================================ */
+  function renderWorkPackages(){
+    const grid = document.getElementById('workpackages-grid');
+    if(!grid) return;
+    grid.innerHTML = LP.cards.map(function(c){
+      return (
+        '<button type="button" class="card pkg-card status-' + c.status + '" data-card-id="' + c.id + '">' +
+          '<div class="pkg-top">' +
+            '<span class="pkg-num">WP ' + c.num + '</span>' +
+            statusPillHTML(c.status) +
+          '</div>' +
+          '<h3>' + escapeHTML(c.title) + '</h3>' +
+          '<p class="pkg-summary">' + escapeHTML(c.summary) + '</p>' +
+          '<div class="pkg-target">' +
+            '<div class="micro-label">Target</div>' +
+            '<div class="val">' + escapeHTML(c.target) + '</div>' +
+          '</div>' +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    renderWorkPackages();
+  });
+
+})();
+</script>
+</body>
+</html>
