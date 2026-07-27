@@ -201,6 +201,17 @@
     border-radius: var(--radius);
     width: 100%;
   }
+  /* Every <select> gets the same custom chevron instead of the browser
+     default dropdown decoration, so it reads as part of this design
+     system rather than an unstyled native control slipping through. */
+  select{
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a3' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 26px;
+    cursor: pointer;
+  }
   input:focus, textarea:focus, select:focus{
     outline: none;
     border-color: var(--accent);
@@ -590,6 +601,8 @@
     appearance: none; -webkit-appearance: none;
     width: auto;
     cursor: pointer;
+    padding-right: 24px;
+    background-position: right 8px center;
   }
   select.status-select.status-good{ color: var(--status-good); border-color: color-mix(in srgb, var(--status-good) 40%, var(--line)); }
   select.status-select.status-watch{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
@@ -1201,8 +1214,8 @@
     </div>
 
     <nav class="topnav" id="topnav">
-      <!-- populated / wired in later phases -->
       <button class="active" data-view="home">Home</button>
+      <button type="button" id="topnav-export">Export Data</button>
     </nav>
   </div>
 </header>
@@ -2937,20 +2950,25 @@
     box.select();
   }
 
+  function runExport(btn){
+    const json = JSON.stringify(gatherAllData(), null, 2);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(json).then(function(){
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent = original; }, 2000);
+      }, function(){ showExportFallback(json); });
+    } else {
+      showExportFallback(json);
+    }
+  }
+
   function initExport(){
-    document.getElementById('export-data-btn').addEventListener('click', function(){
-      const json = JSON.stringify(gatherAllData(), null, 2);
-      const btn = this;
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(json).then(function(){
-          const original = btn.textContent;
-          btn.textContent = 'Copied!';
-          setTimeout(function(){ btn.textContent = original; }, 2000);
-        }, function(){ showExportFallback(json); });
-      } else {
-        showExportFallback(json);
-      }
-    });
+    // Two entry points to the same action: the footer (conventional
+    // location for a backup/export utility) and the topnav (so it's
+    // discoverable immediately, without scrolling the whole dashboard).
+    document.getElementById('export-data-btn').addEventListener('click', function(){ runExport(this); });
+    document.getElementById('topnav-export').addEventListener('click', function(){ runExport(this); });
     document.getElementById('export-fallback-close').addEventListener('click', function(){
       document.getElementById('export-fallback').hidden = true;
     });
