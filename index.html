@@ -535,6 +535,128 @@
   .table-wrap table{ min-width: 480px; }
   .table-wrap th, .table-wrap td{ padding: 12px 16px; }
   .table-wrap tbody tr:last-child td{ border-bottom: none; }
+
+  /* ============================================================
+     INCOME & EXPENDITURE (Phase 4)
+     ============================================================ */
+  .ie-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 820px){ .ie-grid{ grid-template-columns: 1fr; } }
+
+  .ie-panel{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+  }
+  .ie-panel-head{
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .ie-panel-head h3{
+    font-family: var(--font-display);
+    font-size: 16px; font-weight: 600; margin: 0;
+  }
+  .ie-panel-head .ie-subtotal{
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .ie-row{
+    display: grid;
+    grid-template-columns: 1fr 110px 30px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .ie-row input[type="text"]{ font-family: var(--font-body); font-size: 13.5px; }
+  .ie-row input[type="number"]{ text-align: right; }
+  .ie-row-remove{
+    background: transparent; border: none; color: var(--text-muted);
+    font-family: var(--font-mono); font-size: 15px; line-height: 1;
+    padding: 8px 4px; border-radius: var(--radius);
+  }
+  .ie-row-remove:hover{ color: var(--status-hold); }
+  .ie-add-btn{
+    margin-top: 8px;
+    width: 100%;
+    font-size: 11.5px;
+  }
+
+  .ie-totals-bar{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 620px){ .ie-totals-bar{ grid-template-columns: 1fr; } }
+  .ie-totals-bar .stat-block .stat-val{ font-size: 19px; }
+
+  .ie-comparison{
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+    margin-bottom: 34px;
+  }
+  .ie-comparison .ie-target-detail{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ============================================================
+     CASHFLOW FORECAST CHART (Phase 4)
+     ============================================================ */
+  .toggle-tabs{
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .toggle-tabs button{
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 9px 18px;
+    border-right: 1px solid var(--line);
+  }
+  .toggle-tabs button:last-child{ border-right: none; }
+  .toggle-tabs button:hover{ color: var(--text); }
+  .toggle-tabs button.active{ background: var(--accent); color: #12161d; font-weight: 600; }
+
+  .chart-wrap{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px 18px 8px;
+  }
+  .chart-wrap svg{ width: 100%; height: auto; display: block; }
+  .chart-legend{
+    display: flex; gap: 18px; flex-wrap: wrap;
+    padding: 12px 4px 4px;
+  }
+  .legend-item{
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+  }
+  .legend-dot{ width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+  .chart-note{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin: 10px 2px 0;
+  }
 </style>
 </head>
 <body>
@@ -631,6 +753,66 @@
           <tbody id="savings-table-body"><!-- rendered --></tbody>
         </table>
       </div>
+    </section>
+
+    <section class="ie-section" id="section-ie">
+      <div class="section-head"><span class="num">04</span><h2>Income &amp; Expenditure</h2><span class="rule"></span></div>
+      <p class="section-sub">Fully customizable line items. Add or remove rows freely — totals and the monthly cashflow chart update immediately.</p>
+
+      <div class="ie-grid">
+        <div class="ie-panel">
+          <div class="ie-panel-head">
+            <h3>Income</h3>
+            <span class="ie-subtotal" id="ie-total-income">—</span>
+          </div>
+          <div id="ie-income-rows"><!-- rendered --></div>
+          <button type="button" class="btn ie-add-btn" id="ie-add-income">+ Add Income Line</button>
+        </div>
+        <div class="ie-panel">
+          <div class="ie-panel-head">
+            <h3>Expenditure</h3>
+            <span class="ie-subtotal" id="ie-total-expenses">—</span>
+          </div>
+          <div id="ie-expense-rows"><!-- rendered --></div>
+          <button type="button" class="btn ie-add-btn" id="ie-add-expense">+ Add Expense Line</button>
+        </div>
+      </div>
+
+      <div class="ie-totals-bar">
+        <div class="stat-block">
+          <div class="micro-label">Total Income</div>
+          <div class="stat-val" id="ie-stat-income">—</div>
+        </div>
+        <div class="stat-block">
+          <div class="micro-label">Total Expenditure</div>
+          <div class="stat-val" id="ie-stat-expenses">—</div>
+        </div>
+        <div class="stat-block mid">
+          <div class="micro-label">Net Monthly Savings</div>
+          <div class="stat-val" id="ie-stat-net">—</div>
+        </div>
+      </div>
+
+      <div class="ie-comparison">
+        <span class="pill" id="ie-target-pill"><span class="dot"></span>—</span>
+        <span class="ie-target-detail" id="ie-target-detail">—</span>
+      </div>
+    </section>
+
+    <section class="cashflow-section" id="section-cashflow">
+      <div class="section-head"><span class="num">05</span><h2>Cashflow Forecast</h2><span class="rule"></span></div>
+      <p class="section-sub">Monthly view runs on your actual Income &amp; Expenditure net savings. Yearly view runs on the Savings Programme low/mid/high scenario rates.</p>
+
+      <div class="toggle-tabs" id="cashflow-toggle">
+        <button type="button" class="active" data-mode="monthly">Monthly — Next 12mo</button>
+        <button type="button" data-mode="yearly">Yearly — 5yr Scenario</button>
+      </div>
+
+      <div class="chart-wrap">
+        <svg id="cashflow-svg" viewBox="0 0 760 340" role="img" aria-label="Cashflow forecast chart"></svg>
+        <div class="chart-legend" id="cashflow-legend"></div>
+      </div>
+      <p class="chart-note">Dashed line marks the deposit target from the Savings Programme.</p>
     </section>
 
     <section class="pkg-section" id="section-workpackages">
@@ -1172,10 +1354,267 @@
     });
   }
 
+  /* ============================================================
+     PHASE 4a — Income & Expenditure
+     ============================================================ */
+  const IE_DEFAULT_INCOME = [
+    { id: 'inc-1', label: 'Salary (net)', amount: 3100 },
+    { id: 'inc-2', label: 'Freelance / consulting', amount: 250 }
+  ];
+  const IE_DEFAULT_EXPENSES = [
+    { id: 'exp-1', label: 'Rent / Mortgage', amount: 950 },
+    { id: 'exp-2', label: 'Utilities & Council Tax', amount: 220 },
+    { id: 'exp-3', label: 'Groceries', amount: 320 },
+    { id: 'exp-4', label: 'Transport', amount: 140 },
+    { id: 'exp-5', label: 'Gym & Health', amount: 60 },
+    { id: 'exp-6', label: 'Insurance', amount: 85 },
+    { id: 'exp-7', label: 'Subscriptions', amount: 45 },
+    { id: 'exp-8', label: 'Going out / Social', amount: 150 },
+    { id: 'exp-9', label: 'Discretionary buffer', amount: 100 }
+  ];
+
+  function genRowId(){ return 'row-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  LP.ieState = null;
+
+  function loadIEState(){
+    return {
+      income: Store.get('lp.ie.income', IE_DEFAULT_INCOME),
+      expenses: Store.get('lp.ie.expenses', IE_DEFAULT_EXPENSES)
+    };
+  }
+  function persistIE(){
+    Store.set('lp.ie.income', LP.ieState.income);
+    Store.set('lp.ie.expenses', LP.ieState.expenses);
+  }
+
+  function computeIETotals(){
+    const income = LP.ieState.income.reduce(function(s, i){ return s + (parseFloat(i.amount) || 0); }, 0);
+    const expenses = LP.ieState.expenses.reduce(function(s, i){ return s + (parseFloat(i.amount) || 0); }, 0);
+    return { income: income, expenses: expenses, net: income - expenses };
+  }
+  LP.getIENetMonthly = function(){ return LP.ieState ? computeIETotals().net : 0; };
+
+  function renderIERows(kind){
+    const containerId = kind === 'income' ? 'ie-income-rows' : 'ie-expense-rows';
+    const container = document.getElementById(containerId);
+    const items = LP.ieState[kind === 'income' ? 'income' : 'expenses'];
+    container.innerHTML = items.map(function(item){
+      return (
+        '<div class="ie-row" data-row-id="' + item.id + '">' +
+          '<input type="text" data-field="label" placeholder="Line item" value="' + escapeHTML(item.label) + '">' +
+          '<input type="number" data-field="amount" step="5" value="' + item.amount + '">' +
+          '<button type="button" class="ie-row-remove" title="Remove line">&times;</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderIETotals(){
+    const t = computeIETotals();
+    document.getElementById('ie-total-income').textContent = fmtGBP(t.income);
+    document.getElementById('ie-total-expenses').textContent = fmtGBP(t.expenses);
+    document.getElementById('ie-stat-income').textContent = fmtGBP(t.income);
+    document.getElementById('ie-stat-expenses').textContent = fmtGBP(t.expenses);
+    document.getElementById('ie-stat-net').textContent = fmtGBP(t.net);
+
+    const rates = computeMonthlyRates(loadSavingsInputs());
+    let status, label;
+    if(t.net >= rates.mid){ status = 'good'; label = 'Meeting / ahead of mid-case programme rate'; }
+    else if(t.net >= rates.low){ status = 'watch'; label = 'Within the low–mid programme range'; }
+    else { status = 'hold'; label = 'Below the low-case programme rate'; }
+
+    const pillEl = document.getElementById('ie-target-pill');
+    pillEl.className = 'pill status-' + status;
+    pillEl.innerHTML = '<span class="dot"></span>' + label;
+    document.getElementById('ie-target-detail').textContent =
+      'Savings Programme range: ' + fmtGBP(rates.low) + ' – ' + fmtGBP(rates.high) + ' / mo (mid ' + fmtGBP(rates.mid) + ')';
+  }
+
+  function refreshIE(){
+    renderIERows('income');
+    renderIERows('expenses');
+    renderIETotals();
+    if(typeof LP.renderCashflowChart === 'function') LP.renderCashflowChart();
+  }
+
+  function wireIEPanel(kind){
+    const containerId = kind === 'income' ? 'ie-income-rows' : 'ie-expense-rows';
+    const listKey = kind === 'income' ? 'income' : 'expenses';
+    const container = document.getElementById(containerId);
+
+    container.addEventListener('input', function(e){
+      const row = e.target.closest('.ie-row');
+      if(!row) return;
+      const item = LP.ieState[listKey].find(function(i){ return i.id === row.dataset.rowId; });
+      if(!item) return;
+      const field = e.target.dataset.field;
+      item[field] = (field === 'amount') ? (parseFloat(e.target.value) || 0) : e.target.value;
+      persistIE();
+      renderIETotals();
+      if(typeof LP.renderCashflowChart === 'function') LP.renderCashflowChart();
+    });
+
+    container.addEventListener('click', function(e){
+      if(!e.target.matches('.ie-row-remove')) return;
+      const row = e.target.closest('.ie-row');
+      LP.ieState[listKey] = LP.ieState[listKey].filter(function(i){ return i.id !== row.dataset.rowId; });
+      persistIE();
+      refreshIE();
+    });
+
+    document.getElementById(kind === 'income' ? 'ie-add-income' : 'ie-add-expense').addEventListener('click', function(){
+      LP.ieState[listKey].push({ id: genRowId(), label: '', amount: 0 });
+      persistIE();
+      refreshIE();
+      const rows = document.querySelectorAll('#' + containerId + ' .ie-row input[type="text"]');
+      if(rows.length) rows[rows.length - 1].focus();
+    });
+  }
+
+  function initIE(){
+    LP.ieState = loadIEState();
+    wireIEPanel('income');
+    wireIEPanel('expenses');
+    refreshIE();
+  }
+  LP.onSavingsInputsChanged = function(){
+    if(LP.ieState) renderIETotals();
+    if(typeof LP.renderCashflowChart === 'function') LP.renderCashflowChart();
+  };
+
+  /* ============================================================
+     PHASE 4b — Cashflow Forecast chart (inline SVG)
+     ============================================================ */
+  const CHART_COLORS = {
+    accent: '#c08a3e', good: '#7ea38a', watch: '#d1a24a', hold: '#c06a4f',
+    line: '#323b4a', muted: '#8b93a3', text: '#e9e4d8'
+  };
+
+  function scaleLinear(domain, range){
+    return function(v){
+      if(domain[1] === domain[0]) return range[0];
+      return range[0] + (v - domain[0]) / (domain[1] - domain[0]) * (range[1] - range[0]);
+    };
+  }
+
+  function chartAxisLabelShort(n){
+    const v = Math.round(n);
+    if(Math.abs(v) >= 1000) return '£' + (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k';
+    return '£' + v;
+  }
+
+  LP.cashflowMode = 'monthly';
+
+  function renderCashflowChart(){
+    const svg = document.getElementById('cashflow-svg');
+    if(!svg) return;
+    const mode = LP.cashflowMode;
+    const savingsInputs = loadSavingsInputs();
+    const rates = computeMonthlyRates(savingsInputs);
+    const target = savingsInputs.depositTarget;
+    const current = savingsInputs.currentSavings;
+
+    const W = 760, H = 340;
+    const PAD_L = 58, PAD_R = 20, PAD_T = 20, PAD_B = 40;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+
+    let series, xTicks, maxX;
+
+    if(mode === 'monthly'){
+      const net = LP.getIENetMonthly();
+      maxX = 12;
+      const pts = [];
+      for(let m = 0; m <= 12; m++) pts.push({ x: m, y: current + net * m });
+      series = [{ label: 'Projected balance (I&E net)', color: CHART_COLORS.accent, points: pts }];
+      xTicks = [0, 3, 6, 9, 12].map(function(m){ return { x: m, label: m === 0 ? 'Now' : 'M' + m }; });
+    } else {
+      maxX = 5;
+      function ptsFor(rate){
+        const arr = [];
+        for(let y = 0; y <= 5; y++) arr.push({ x: y, y: current + rate * y * 12 });
+        return arr;
+      }
+      series = [
+        { label: 'Low', color: CHART_COLORS.hold, points: ptsFor(rates.low) },
+        { label: 'Mid', color: CHART_COLORS.accent, points: ptsFor(rates.mid) },
+        { label: 'High', color: CHART_COLORS.good, points: ptsFor(rates.high) }
+      ];
+      xTicks = [0, 1, 2, 3, 4, 5].map(function(y){ return { x: y, label: y === 0 ? 'Now' : 'Yr' + y }; });
+    }
+
+    const allY = series.reduce(function(acc, s){ return acc.concat(s.points.map(function(p){ return p.y; })); }, []);
+    const dataMax = Math.max.apply(null, allY.concat([0]));
+    const dataMin = Math.min.apply(null, allY.concat([0]));
+    const yMax = Math.max(target, dataMax) * 1.12;
+    const yMin = Math.min(0, dataMin);
+
+    const xScale = scaleLinear([0, maxX], [PAD_L, PAD_L + plotW]);
+    const yScale = scaleLinear([yMin, yMax], [PAD_T + plotH, PAD_T]);
+
+    const GRID_N = 4;
+    let gridSvg = '';
+    for(let i = 0; i <= GRID_N; i++){
+      const val = yMin + (yMax - yMin) * i / GRID_N;
+      const y = yScale(val);
+      gridSvg += '<line x1="' + PAD_L + '" y1="' + y.toFixed(1) + '" x2="' + (PAD_L + plotW) + '" y2="' + y.toFixed(1) + '" stroke="' + CHART_COLORS.line + '" stroke-width="1"/>';
+      gridSvg += '<text x="' + (PAD_L - 10) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.muted + '">' + chartAxisLabelShort(val) + '</text>';
+    }
+
+    let xLabelSvg = '';
+    xTicks.forEach(function(t){
+      xLabelSvg += '<text x="' + xScale(t.x).toFixed(1) + '" y="' + (PAD_T + plotH + 24) + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.muted + '">' + t.label + '</text>';
+    });
+
+    const targetClamped = Math.max(yMin, Math.min(target, yMax));
+    const targetY = yScale(targetClamped);
+    const refSvg =
+      '<line x1="' + PAD_L + '" y1="' + targetY.toFixed(1) + '" x2="' + (PAD_L + plotW) + '" y2="' + targetY.toFixed(1) + '" stroke="' + CHART_COLORS.text + '" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>' +
+      '<text x="' + (PAD_L + 8) + '" y="' + (targetY - 6).toFixed(1) + '" text-anchor="start" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.text + '" opacity="0.85">Target ' + fmtGBPRounded(target) + '</text>';
+
+    let seriesSvg = '';
+    series.forEach(function(s){
+      const d = s.points.map(function(p, i){ return (i === 0 ? 'M' : 'L') + xScale(p.x).toFixed(1) + ',' + yScale(p.y).toFixed(1); }).join(' ');
+      seriesSvg += '<path d="' + d + '" fill="none" stroke="' + s.color + '" stroke-width="2.25"/>';
+      s.points.forEach(function(p){
+        seriesSvg += '<circle cx="' + xScale(p.x).toFixed(1) + '" cy="' + yScale(p.y).toFixed(1) + '" r="3" fill="' + s.color + '"/>';
+      });
+    });
+
+    const zeroY = yScale(0).toFixed(1);
+    const axisSvg = '<line x1="' + PAD_L + '" y1="' + zeroY + '" x2="' + (PAD_L + plotW) + '" y2="' + zeroY + '" stroke="' + CHART_COLORS.muted + '" stroke-width="1"/>';
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.innerHTML = gridSvg + axisSvg + refSvg + xLabelSvg + seriesSvg;
+
+    const legendEl = document.getElementById('cashflow-legend');
+    if(legendEl){
+      legendEl.innerHTML = series.map(function(s){
+        return '<span class="legend-item"><span class="legend-dot" style="background:' + s.color + '"></span>' + escapeHTML(s.label) + '</span>';
+      }).join('');
+    }
+  }
+  LP.renderCashflowChart = renderCashflowChart;
+
+  function initCashflowChart(){
+    document.querySelectorAll('#cashflow-toggle button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('#cashflow-toggle button').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        LP.cashflowMode = btn.dataset.mode;
+        renderCashflowChart();
+      });
+    });
+    renderCashflowChart();
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
     wireDetailEvents();
     initSavingsProgramme();
+    initIE();
+    initCashflowChart();
   });
 
 })();
