@@ -657,6 +657,118 @@
     color: var(--text-muted);
     margin: 10px 2px 0;
   }
+
+  /* ============================================================
+     MASTER SCHEDULE — Micro / Macro (Phase 5)
+     ============================================================ */
+  .week-grid{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 760px){
+    .week-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+  .week-day{
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 11px;
+    min-height: 128px;
+  }
+  .week-day-name{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 9px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--line);
+  }
+  .week-chip{
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--text-muted);
+    border-radius: var(--radius);
+    padding: 7px 9px;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .week-chip.status-good{ border-left-color: var(--status-good); }
+  .week-chip.status-watch{ border-left-color: var(--status-watch); }
+  .week-chip.status-hold{ border-left-color: var(--status-hold); }
+  .week-chip:hover{ border-color: var(--accent); }
+  .week-chip .chip-label{
+    display: block;
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .week-chip .chip-source{
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .week-day-empty{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+
+  .timeline-year{ margin-bottom: 30px; }
+  .timeline-year-label{
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  .timeline-item{
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    width: 100%;
+    background: transparent;
+    border-left: none; border-right: none; border-top: none;
+    text-align: left;
+    color: var(--text);
+  }
+  .timeline-item:last-child{ border-bottom: none; }
+  .timeline-item:hover .timeline-label{ color: var(--accent); }
+  .timeline-date{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-muted);
+    flex: 0 0 68px;
+    padding-top: 1px;
+  }
+  .timeline-body{ flex: 1 1 auto; }
+  .timeline-label{ font-size: 14.5px; margin-bottom: 4px; }
+  .timeline-source{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .dot-indicator{
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
 </style>
 </head>
 <body>
@@ -695,6 +807,19 @@
 
 <main class="wrap">
   <section id="view-home" class="view">
+
+    <section class="schedule-section" id="section-schedule">
+      <div class="section-head"><span class="num">02</span><h2>Master Schedule</h2><span class="rule"></span></div>
+      <p class="section-sub">Micro is daily/weekly execution. Macro is the dated, big-picture programme. Different cognitive modes — deliberately never shown at once.</p>
+
+      <div class="toggle-tabs" id="schedule-toggle">
+        <button type="button" class="active" data-mode="micro">Micro — Weekly Habits</button>
+        <button type="button" data-mode="macro">Macro — Upcoming</button>
+      </div>
+
+      <div id="schedule-micro" class="week-grid"><!-- rendered --></div>
+      <div id="schedule-macro" class="timeline-wrap" style="display:none;"><!-- rendered --></div>
+    </section>
 
     <section class="savings-section" id="section-savings">
       <div class="section-head"><span class="num">03</span><h2>Savings Programme</h2><span class="rule"></span></div>
@@ -1609,12 +1734,102 @@
     renderCashflowChart();
   }
 
+  /* ============================================================
+     PHASE 5 — Master Schedule (Micro / Macro)
+     ============================================================ */
+  const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  function renderScheduleMicro(){
+    const grid = document.getElementById('schedule-micro');
+    if(!grid) return;
+    grid.innerHTML = DAY_ORDER.map(function(day){
+      const chips = [];
+      LP.cards.forEach(function(c){
+        c.weeklyItems.forEach(function(wi){
+          if(wi.day === day) chips.push({ card: c, item: wi });
+        });
+      });
+      const chipsHtml = chips.length
+        ? chips.map(function(ch){
+            return (
+              '<button type="button" class="week-chip status-' + ch.card.status + '" data-card-id="' + ch.card.id + '">' +
+                '<span class="chip-label">' + escapeHTML(ch.item.label) + '</span>' +
+                '<span class="chip-source">' + escapeHTML(ch.card.title) + '</span>' +
+              '</button>'
+            );
+          }).join('')
+        : '<div class="week-day-empty">— no items —</div>';
+      return '<div class="week-day"><div class="week-day-name">' + day + '</div>' + chipsHtml + '</div>';
+    }).join('');
+  }
+
+  function renderScheduleMacro(){
+    const wrap = document.getElementById('schedule-macro');
+    if(!wrap) return;
+    const all = [];
+    LP.cards.forEach(function(c){
+      c.milestones.forEach(function(m){
+        all.push({ date: m.date, label: m.label, cardId: c.id, cardTitle: c.title, cardStatus: c.status });
+      });
+    });
+    all.sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+
+    const byYear = {};
+    all.forEach(function(m){
+      const yr = m.date.slice(0, 4);
+      (byYear[yr] = byYear[yr] || []).push(m);
+    });
+    const years = Object.keys(byYear).sort();
+
+    wrap.innerHTML = years.map(function(yr){
+      const items = byYear[yr].map(function(m){
+        const d = new Date(m.date + 'T00:00:00');
+        const dateLabel = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        return (
+          '<button type="button" class="timeline-item" data-card-id="' + m.cardId + '">' +
+            '<div class="timeline-date">' + dateLabel + '</div>' +
+            '<div class="timeline-body">' +
+              '<div class="timeline-label">' + escapeHTML(m.label) + '</div>' +
+              '<div class="timeline-source"><span class="dot-indicator" style="background:var(--status-' + m.cardStatus + ')"></span>' + escapeHTML(m.cardTitle) + '</div>' +
+            '</div>' +
+          '</button>'
+        );
+      }).join('');
+      return '<div class="timeline-year"><h3 class="timeline-year-label">' + yr + '</h3>' + items + '</div>';
+    }).join('');
+  }
+
+  function initSchedule(){
+    renderScheduleMicro();
+    renderScheduleMacro();
+
+    document.getElementById('schedule-micro').addEventListener('click', function(e){
+      const btn = e.target.closest('[data-card-id]');
+      if(btn) openDetail(btn.dataset.cardId);
+    });
+    document.getElementById('schedule-macro').addEventListener('click', function(e){
+      const btn = e.target.closest('[data-card-id]');
+      if(btn) openDetail(btn.dataset.cardId);
+    });
+
+    document.querySelectorAll('#schedule-toggle button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('#schedule-toggle button').forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        const mode = btn.dataset.mode;
+        document.getElementById('schedule-micro').style.display = (mode === 'micro') ? '' : 'none';
+        document.getElementById('schedule-macro').style.display = (mode === 'macro') ? '' : 'none';
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
     wireDetailEvents();
     initSavingsProgramme();
     initIE();
     initCashflowChart();
+    initSchedule();
   });
 
 })();
