@@ -787,14 +787,28 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 34px;
+  }
+  .ie-recon-row{
     display: flex; align-items: center; justify-content: space-between;
     gap: 14px; flex-wrap: wrap;
-    margin-bottom: 34px;
   }
   .ie-comparison .ie-target-detail{
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--text-muted);
+  }
+  .ie-recon-delta{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .ie-recon-delta .diverge-flag{
+    color: var(--status-watch);
+    margin-left: 4px;
   }
 
   /* ============================================================
@@ -1037,7 +1051,13 @@
     border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
   }
   .phase-block li:last-child{ border-bottom: none; }
-  .phase-block li .area-tag{
+  .phase-block li{ padding: 0; }
+  .area-link{
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: none; padding: 7px 0;
+    color: var(--text); font-size: 13px; line-height: 1.5; cursor: pointer;
+  }
+  .area-link .area-tag{
     display: block;
     font-family: var(--font-mono);
     font-size: 9.5px;
@@ -1046,6 +1066,31 @@
     color: var(--text-muted);
     margin-bottom: 2px;
   }
+  .area-link:hover .area-tag{ color: var(--accent); }
+
+  .critical-callout{
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--status-hold) 45%, var(--line));
+    border-left: 3px solid var(--status-hold);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 22px;
+  }
+  .critical-callout-title{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--status-hold);
+    margin-bottom: 8px;
+  }
+  .critical-callout ul{ margin: 0; padding: 0; list-style: none; }
+  .critical-callout li{ padding: 5px 0; }
+  .critical-link{
+    background: transparent; border: none; padding: 0;
+    color: var(--text); font-family: var(--font-body); font-size: 13.5px; cursor: pointer; text-align: left;
+  }
+  .critical-link:hover{ color: var(--accent); text-decoration: underline; }
 
   /* ============================================================
      NON-NEGOTIABLES (Phase 6)
@@ -1073,6 +1118,16 @@
     color: var(--status-hold);
     flex: 0 0 auto;
   }
+  .nn-list .nn-input{
+    flex: 1 1 auto;
+    font-family: var(--font-body); font-size: 15px;
+    background: transparent; border: 1px solid transparent; padding: 4px 6px;
+  }
+  .nn-list .nn-input:hover{ border-color: var(--line); }
+  .nn-list .nn-input:focus{ border-color: var(--accent); background: var(--bg); }
+  .nn-list .nn-remove{ flex: 0 0 auto; }
+  .nn-actions{ display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .nn-actions #nn-add{ flex: 1 1 220px; }
 </style>
 </head>
 <body>
@@ -1231,8 +1286,11 @@
       </div>
 
       <div class="ie-comparison">
-        <span class="pill" id="ie-target-pill"><span class="dot"></span>—</span>
-        <span class="ie-target-detail" id="ie-target-detail">—</span>
+        <div class="ie-recon-row">
+          <span class="pill" id="ie-target-pill"><span class="dot"></span>—</span>
+          <span class="ie-target-detail" id="ie-target-detail">—</span>
+        </div>
+        <div class="ie-recon-delta" id="ie-recon-delta">—</div>
       </div>
     </section>
 
@@ -1244,6 +1302,7 @@
         <button type="button" class="active" data-mode="monthly">Monthly — Next 12mo</button>
         <button type="button" data-mode="yearly">Yearly — 5yr Scenario</button>
       </div>
+      <p class="chart-note" id="cashflow-driver-caption" style="margin-top:-8px; margin-bottom:14px;"></p>
 
       <div class="chart-wrap">
         <svg id="cashflow-svg" viewBox="0 0 760 340" role="img" aria-label="Cashflow forecast chart"></svg>
@@ -1307,61 +1366,22 @@
 
     <section class="sequencing-section" id="section-sequencing">
       <div class="section-head"><span class="num">08</span><h2>Sequencing</h2><span class="rule"></span></div>
-      <p class="section-sub">What's actually active across the whole programme, phase by phase.</p>
+      <p class="section-sub">Auto-generated from the live work packages, grouped by each one's own Sequencing field — this regenerates every time a card changes, it is never hand-curated.</p>
 
-      <div class="phase-grid">
-        <div class="phase-block">
-          <div class="phase-range">Yr 1–2</div>
-          <ul>
-            <li><span class="area-tag">Family Planning</span>Have the timing conversation and align on a target window.</li>
-            <li><span class="area-tag">Savings / Deposits</span>Standing order live; weekly review habit established.</li>
-            <li><span class="area-tag">Health + Fitness</span>Marathon base + build phases; half marathon tune-up race.</li>
-            <li><span class="area-tag">Community</span>Rebuild the weekly anchor; join one club for the autumn term.</li>
-            <li><span class="area-tag">Adventure &amp; Travel</span>Portugal and Japan trips banked and taken.</li>
-            <li><span class="area-tag">Hobbies</span>Guitar habit running; photo series shot and finished.</li>
-          </ul>
-        </div>
-        <div class="phase-block">
-          <div class="phase-range">Yr 2–3</div>
-          <ul>
-            <li><span class="area-tag">Savings / Deposits</span>Fund crosses roughly the halfway point.</li>
-            <li><span class="area-tag">Health + Fitness</span>Peak marathon block, then race day.</li>
-            <li><span class="area-tag">Side Hustle</span>Reactivation review against parked criteria.</li>
-            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Yr 2 structural decision review — location and home project.</li>
-            <li><span class="area-tag">Learning &amp; Development</span>CPD and personal technical practice continue as steady background load.</li>
-          </ul>
-        </div>
-        <div class="phase-block">
-          <div class="phase-range">Yr 3–4</div>
-          <ul>
-            <li><span class="area-tag">Savings / Deposits</span>Approaching the deposit target; scenario re-checked against real rates.</li>
-            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Home project go/no-go executed.</li>
-            <li><span class="area-tag">Health, Learning, Hobbies, Community</span>Held steady as ongoing maintenance, not active projects.</li>
-          </ul>
-        </div>
-        <div class="phase-block">
-          <div class="phase-range">Yr 4–6</div>
-          <ul>
-            <li><span class="area-tag">Long-Term + Short-Term Goals</span>Revisit the "life at 40" vision document.</li>
-            <li><span class="area-tag">Whole Programme</span>Full review of every work package's status, cadence, and sequencing.</li>
-            <li><span class="area-tag">Side Hustle</span>Reassess dormancy honestly — reactivate, extend, or retire the idea bank.</li>
-          </ul>
-        </div>
-      </div>
+      <div id="sequencing-critical"><!-- rendered --></div>
+      <div class="phase-grid" id="sequencing-groups"><!-- rendered --></div>
     </section>
 
     <section class="nn-section" id="section-nonnegotiables">
       <div class="section-head"><span class="num">09</span><h2>Non-Negotiables</h2><span class="rule"></span></div>
-      <p class="section-sub">Genuinely few, genuinely non-negotiable. These override everything above when they conflict.</p>
+      <p class="section-sub">Genuinely few, genuinely non-negotiable — these override everything above when they conflict. <strong>Manually curated — add, edit, or remove directly below.</strong> Not derived from the work packages; editing a card's priority or status never changes this list.</p>
 
       <div class="nn-card">
-        <ol class="nn-list">
-          <li>Family time and health commitments are never sacrificed to hit a savings rate.</li>
-          <li>No side hustle activity starts until the deposit fund and marathon training are both on track.</li>
-          <li>One full rest day every week — no exceptions, no "just this once."</li>
-          <li>Every bonus or windfall goes to the deposit fund before it goes anywhere else.</li>
-          <li>The family planning timing decision is not deferred past the Yr 1 review.</li>
-        </ol>
+        <ol class="nn-list" id="nn-list"><!-- rendered --></ol>
+      </div>
+      <div class="nn-actions">
+        <button type="button" class="btn ie-add-btn" id="nn-add">+ Add Non-Negotiable</button>
+        <button type="button" class="btn btn-ghost" id="nn-reset">Reset to Defaults</button>
       </div>
     </section>
 
@@ -1736,7 +1756,12 @@
   function escapeHTML(s){
     const d = document.createElement('div');
     d.textContent = s == null ? '' : String(s);
-    return d.innerHTML;
+    // innerHTML escapes & < > for text-node safety but NOT quote characters
+    // (they're only dangerous inside an attribute, not inside text content).
+    // This helper is used for both, so escape quotes explicitly too —
+    // otherwise a literal " in a card field truncates the value="..."
+    // attribute it gets interpolated into.
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   /* ============================================================
@@ -2371,7 +2396,8 @@
 
     const rates = computeMonthlyRates(loadSavingsInputs());
     let status, label;
-    if(t.net >= rates.mid){ status = 'good'; label = 'Meeting / ahead of mid-case programme rate'; }
+    if(t.net < 0){ status = 'hold'; label = 'Spending exceeds income — net negative'; }
+    else if(t.net >= rates.mid){ status = 'good'; label = 'Meeting / ahead of mid-case programme rate'; }
     else if(t.net >= rates.low){ status = 'watch'; label = 'Within the low–mid programme range'; }
     else { status = 'hold'; label = 'Below the low-case programme rate'; }
 
@@ -2380,6 +2406,23 @@
     pillEl.innerHTML = '<span class="dot"></span>' + label;
     document.getElementById('ie-target-detail').textContent =
       'Savings Programme range: ' + fmtGBP(rates.low) + ' – ' + fmtGBP(rates.high) + ' / mo (mid ' + fmtGBP(rates.mid) + ')';
+
+    /* Explicit reconciliation: the I&E net and the Savings Programme
+       rate are two independently-editable inputs that can silently
+       drift apart. Show both numbers and the delta so drift is
+       visible, and flag (never block) once it's large enough to
+       probably mean the two haven't been kept in sync. */
+    const deltaEl = document.getElementById('ie-recon-delta');
+    const delta = t.net - rates.mid;
+    const pct = rates.mid !== 0 ? (delta / Math.abs(rates.mid)) : (t.net !== 0 ? Infinity : 0);
+    const deltaSign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
+    const pctText = Number.isFinite(pct) ? Math.round(Math.abs(pct) * 100) + '%' : 'n/a';
+    let deltaHTML =
+      'I&E net ' + fmtGBP(t.net) + '/mo vs. Programme mid-case ' + fmtGBP(rates.mid) + '/mo — Δ ' + deltaSign + fmtGBP(Math.abs(delta)) + '/mo (' + pctText + ')';
+    if(Math.abs(pct) > 0.2){
+      deltaHTML += '<span class="diverge-flag">⚑ Diverging by more than 20% — consider syncing these two inputs.</span>';
+    }
+    deltaEl.innerHTML = deltaHTML;
   }
 
   function refreshIE(){
@@ -2473,6 +2516,8 @@
 
     let series, xTicks, maxX;
 
+    const captionEl = document.getElementById('cashflow-driver-caption');
+
     if(mode === 'monthly'){
       const net = LP.getIENetMonthly();
       maxX = 12;
@@ -2480,6 +2525,7 @@
       for(let m = 0; m <= 12; m++) pts.push({ x: m, y: current + net * m });
       series = [{ label: 'Projected balance (I&E net)', color: CHART_COLORS.accent, points: pts }];
       xTicks = [0, 3, 6, 9, 12].map(function(m){ return { x: m, label: m === 0 ? 'Now' : 'M' + m }; });
+      if(captionEl) captionEl.textContent = 'Driven by: Income & Expenditure net savings (' + fmtGBP(net) + '/mo).';
     } else {
       maxX = 5;
       function ptsFor(rate){
@@ -2493,12 +2539,14 @@
         { label: 'High', color: CHART_COLORS.good, points: ptsFor(rates.high) }
       ];
       xTicks = [0, 1, 2, 3, 4, 5].map(function(y){ return { x: y, label: y === 0 ? 'Now' : 'Yr' + y }; });
+      if(captionEl) captionEl.textContent = 'Driven by: Savings Programme low/mid/high rates (' + fmtGBP(rates.low) + ' – ' + fmtGBP(rates.high) + '/mo, mid ' + fmtGBP(rates.mid) + ').';
     }
 
+    const hasTarget = target > 0;
     const allY = series.reduce(function(acc, s){ return acc.concat(s.points.map(function(p){ return p.y; })); }, []);
     const dataMax = Math.max.apply(null, allY.concat([0]));
     const dataMin = Math.min.apply(null, allY.concat([0]));
-    const yMax = Math.max(target, dataMax) * 1.12;
+    const yMax = Math.max(hasTarget ? target : 0, dataMax) * 1.12;
     const yMin = Math.min(0, dataMin);
 
     const xScale = scaleLinear([0, maxX], [PAD_L, PAD_L + plotW]);
@@ -2518,11 +2566,14 @@
       xLabelSvg += '<text x="' + xScale(t.x).toFixed(1) + '" y="' + (PAD_T + plotH + 24) + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.muted + '">' + t.label + '</text>';
     });
 
-    const targetClamped = Math.max(yMin, Math.min(target, yMax));
-    const targetY = yScale(targetClamped);
-    const refSvg =
-      '<line x1="' + PAD_L + '" y1="' + targetY.toFixed(1) + '" x2="' + (PAD_L + plotW) + '" y2="' + targetY.toFixed(1) + '" stroke="' + CHART_COLORS.text + '" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>' +
-      '<text x="' + (PAD_L + 8) + '" y="' + (targetY - 6).toFixed(1) + '" text-anchor="start" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.text + '" opacity="0.85">Target ' + fmtGBPRounded(target) + '</text>';
+    let refSvg = '';
+    if(hasTarget){
+      const targetClamped = Math.max(yMin, Math.min(target, yMax));
+      const targetY = yScale(targetClamped);
+      refSvg =
+        '<line x1="' + PAD_L + '" y1="' + targetY.toFixed(1) + '" x2="' + (PAD_L + plotW) + '" y2="' + targetY.toFixed(1) + '" stroke="' + CHART_COLORS.text + '" stroke-width="1" stroke-dasharray="4 4" opacity="0.55"/>' +
+        '<text x="' + (PAD_L + 8) + '" y="' + (targetY - 6).toFixed(1) + '" text-anchor="start" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="' + CHART_COLORS.text + '" opacity="0.85">Target ' + fmtGBPRounded(target) + '</text>';
+    }
 
     let seriesSvg = '';
     series.forEach(function(s){
@@ -2647,6 +2698,123 @@
     });
   }
 
+  /* ============================================================
+     PHASE 6 (revised) — Sequencing: auto-generated from live cards
+     ============================================================ */
+  function renderSequencing(){
+    const groupsEl = document.getElementById('sequencing-groups');
+    const criticalEl = document.getElementById('sequencing-critical');
+    if(!groupsEl || !criticalEl) return;
+
+    const critical = LP.cards.filter(function(c){ return c.priority === 'High' && c.status === 'hold'; });
+    criticalEl.innerHTML = critical.length
+      ? '<div class="critical-callout"><div class="critical-callout-title">⚠ Critical Path — High Priority + Hold Status</div><ul>' +
+          critical.map(function(c){
+            return '<li><button type="button" class="critical-link" data-card-id="' + c.id + '">' + escapeHTML(c.title) + '</button> — ' + escapeHTML(c.summary || 'No summary set.') + '</li>';
+          }).join('') +
+        '</ul></div>'
+      : '';
+
+    const groups = {};
+    LP.cards.forEach(function(c){
+      const key = c.sequencing || 'Unsequenced';
+      (groups[key] = groups[key] || []).push(c);
+    });
+    const keys = Object.keys(groups).sort(function(a, b){
+      function rank(k){ const m = k.match(/Yr\s*(\d+)/i); return m ? parseInt(m[1], 10) : 999; }
+      return rank(a) - rank(b) || a.localeCompare(b);
+    });
+
+    groupsEl.innerHTML = keys.map(function(k){
+      return (
+        '<div class="phase-block">' +
+          '<div class="phase-range">' + escapeHTML(k) + '</div>' +
+          '<ul>' + groups[k].map(function(c){
+            return '<li><button type="button" class="area-link" data-card-id="' + c.id + '"><span class="area-tag">' + escapeHTML(c.title) + '</span>' + escapeHTML(c.target || c.summary || 'No target set.') + '</button></li>';
+          }).join('') + '</ul>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function initSequencing(){
+    renderSequencing();
+    document.getElementById('section-sequencing').addEventListener('click', function(e){
+      const btn = e.target.closest('[data-card-id]');
+      if(btn) openDetail(btn.dataset.cardId);
+    });
+  }
+
+  /* ============================================================
+     PHASE 6 (revised) — Non-Negotiables: manually curated & editable
+     (explicitly NOT derived from card data — labeled as such in the UI)
+     ============================================================ */
+  const NN_DEFAULTS = [
+    'Family time and health commitments are never sacrificed to hit a savings rate.',
+    'No side hustle activity starts until the deposit fund and marathon training are both on track.',
+    'One full rest day every week — no exceptions, no "just this once."',
+    'Every bonus or windfall goes to the deposit fund before it goes anywhere else.',
+    'The family planning timing decision is not deferred past the Yr 1 review.'
+  ];
+  const NN_KEY = 'lp.nonnegotiables';
+
+  function loadNN(){
+    const stored = Store.get(NN_KEY, null);
+    if(stored && Array.isArray(stored) && stored.length) return stored;
+    const seeded = NN_DEFAULTS.slice();
+    Store.set(NN_KEY, seeded);
+    return seeded;
+  }
+  function persistNN(){ Store.set(NN_KEY, LP.nnState); }
+
+  function renderNN(){
+    const list = document.getElementById('nn-list');
+    if(!list) return;
+    if(!LP.nnState.length){
+      list.innerHTML = '<li class="empty-state" style="border-bottom:none;">No non-negotiables set.</li>';
+      return;
+    }
+    list.innerHTML = LP.nnState.map(function(text, i){
+      return (
+        '<li data-idx="' + i + '">' +
+          '<input type="text" class="nn-input" data-idx="' + i + '" value="' + escapeHTML(text) + '">' +
+          '<button type="button" class="row-remove-btn nn-remove" data-idx="' + i + '" title="Remove">&times;</button>' +
+        '</li>'
+      );
+    }).join('');
+  }
+
+  function initNonNegotiables(){
+    LP.nnState = loadNN();
+    renderNN();
+
+    document.getElementById('nn-list').addEventListener('input', function(e){
+      if(!e.target.matches('.nn-input')) return;
+      LP.nnState[parseInt(e.target.dataset.idx, 10)] = e.target.value;
+      persistNN();
+    });
+    document.getElementById('nn-list').addEventListener('click', function(e){
+      if(!e.target.matches('.nn-remove')) return;
+      LP.nnState.splice(parseInt(e.target.dataset.idx, 10), 1);
+      persistNN();
+      renderNN();
+    });
+    document.getElementById('nn-add').addEventListener('click', function(){
+      LP.nnState.push('');
+      persistNN();
+      renderNN();
+      const inputs = document.querySelectorAll('#nn-list .nn-input');
+      if(inputs.length) inputs[inputs.length - 1].focus();
+    });
+    document.getElementById('nn-reset').addEventListener('click', function(){
+      if(confirm('Reset Non-Negotiables to the default list? This replaces anything you\'ve edited here.')){
+        LP.nnState = NN_DEFAULTS.slice();
+        persistNN();
+        renderNN();
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
     wireDetailEvents();
@@ -2654,6 +2822,8 @@
     initIE();
     initCashflowChart();
     initSchedule();
+    initSequencing();
+    initNonNegotiables();
   });
 
 })();
