@@ -381,6 +381,103 @@
     font-size: 12.5px;
     color: var(--text);
   }
+
+  /* ============================================================
+     DETAIL DRILL-DOWN (Phase 2)
+     ============================================================ */
+  .detail-head{ padding-top: 40px; }
+  .detail-title-row{
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 20px; flex-wrap: wrap;
+  }
+  .detail-title-row h2{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 4vw, 36px);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .detail-title-row .pkg-num{
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+  }
+
+  .detail-meta-row{
+    display: flex; flex-wrap: wrap;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin: 22px 0 40px;
+  }
+  .detail-meta-row .meta-item{
+    flex: 1 1 180px;
+    padding: 16px 22px 16px 0;
+    margin-right: 22px;
+    border-right: 1px solid var(--line);
+  }
+  .detail-meta-row .meta-item.wide{ flex: 2.2 1 300px; }
+  .detail-meta-row .meta-item:last-child{ border-right: none; margin-right: 0; }
+  .detail-meta-row .meta-item .val{ font-family: var(--font-mono); font-size: 13.5px; }
+  .detail-meta-row .meta-item .val.prose{ font-family: var(--font-body); font-size: 14.5px; line-height: 1.5; }
+
+  .obj-group{ margin-bottom: 30px; }
+  .obj-group-title{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 0 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .obj-row{
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 9px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  }
+  .obj-row:last-child{ border-bottom: none; }
+  .obj-row input[type="checkbox"]{
+    appearance: none; -webkit-appearance: none;
+    width: 16px; height: 16px; flex: 0 0 auto;
+    margin-top: 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    cursor: pointer;
+    position: relative;
+  }
+  .obj-row input[type="checkbox"]:checked{
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .obj-row input[type="checkbox"]:checked::after{
+    content: "";
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid #12161d;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .obj-row label{
+    font-size: 14px; line-height: 1.4;
+    cursor: pointer; flex: 1 1 auto;
+  }
+  .obj-row.done label{
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--line);
+  }
+
+  .detail-notes textarea{ min-height: 130px; }
+  .detail-notes .save-hint{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -426,6 +523,27 @@
       <div class="card-grid" id="workpackages-grid"><!-- rendered from LP.cards --></div>
     </section>
 
+  </section>
+
+  <section id="view-detail" class="view" hidden>
+    <div class="detail-head">
+      <button type="button" class="btn btn-ghost" id="detail-back">&larr; Back to Work Packages</button>
+      <div class="detail-title-row">
+        <span class="pkg-num" id="detail-num"></span>
+        <h2 id="detail-title"></h2>
+        <span id="detail-status-pill"></span>
+      </div>
+    </div>
+
+    <div class="detail-meta-row" id="detail-meta"><!-- rendered --></div>
+
+    <div id="detail-objectives"><!-- rendered --></div>
+
+    <div class="detail-notes">
+      <div class="section-head"><span class="num">NOTES</span><h2>Notes</h2><span class="rule"></span></div>
+      <textarea id="detail-notes-box" rows="6" placeholder="Free-form notes for this life area..."></textarea>
+      <div class="save-hint">Saved automatically to this device.</div>
+    </div>
   </section>
 </main>
 
@@ -729,8 +847,101 @@
     }).join('');
   }
 
+  function priorityPillHTML(priority){
+    return '<span class="pill priority-' + priority.toLowerCase() + '">' + escapeHTML(priority) + ' Priority</span>';
+  }
+
+  function cardById(id){
+    return LP.cards.find(function(c){ return c.id === id; });
+  }
+
+  /* ============================================================
+     VIEW SWITCHING — home <-> detail (no page reload / routing)
+     ============================================================ */
+  function showView(name){
+    document.getElementById('view-home').hidden = (name !== 'home');
+    document.getElementById('view-detail').hidden = (name !== 'detail');
+    window.scrollTo(0, 0);
+  }
+  LP.showView = showView;
+
+  /* ============================================================
+     PHASE 2 — Detail drill-down
+     ============================================================ */
+  function openDetail(cardId){
+    const c = cardById(cardId);
+    if(!c) return;
+
+    document.getElementById('detail-num').textContent = 'WP ' + c.num;
+    document.getElementById('detail-title').textContent = c.title;
+    document.getElementById('detail-status-pill').innerHTML = statusPillHTML(c.status);
+
+    document.getElementById('detail-meta').innerHTML =
+      '<div class="meta-item wide"><div class="micro-label">Goal</div><div class="val prose">' + escapeHTML(c.goal) + '</div></div>' +
+      '<div class="meta-item"><div class="micro-label">Priority</div><div class="val">' + priorityPillHTML(c.priority) + '</div></div>' +
+      '<div class="meta-item"><div class="micro-label">Cadence</div><div class="val">' + escapeHTML(c.cadence) + '</div></div>' +
+      '<div class="meta-item"><div class="micro-label">Sequencing</div><div class="val">' + escapeHTML(c.sequencing) + '</div></div>';
+
+    document.getElementById('detail-objectives').innerHTML = c.objectiveGroups.map(function(g){
+      const rows = g.items.map(function(item){
+        const done = Store.get('lp.obj.' + item.id, item.done);
+        return (
+          '<div class="obj-row' + (done ? ' done' : '') + '" data-obj-row="' + item.id + '">' +
+            '<input type="checkbox" id="chk-' + item.id + '" data-obj-id="' + item.id + '"' + (done ? ' checked' : '') + '>' +
+            '<label for="chk-' + item.id + '">' + escapeHTML(item.text) + '</label>' +
+          '</div>'
+        );
+      }).join('');
+      return (
+        '<div class="obj-group">' +
+          '<div class="obj-group-title">' + escapeHTML(g.group) + '</div>' +
+          rows +
+        '</div>'
+      );
+    }).join('');
+
+    const notesBox = document.getElementById('detail-notes-box');
+    notesBox.value = Store.get('lp.notes.' + cardId, '');
+    notesBox.dataset.cardId = cardId;
+
+    showView('detail');
+  }
+  LP.openDetail = openDetail;
+
+  function wireDetailEvents(){
+    document.getElementById('detail-back').addEventListener('click', function(){
+      showView('home');
+    });
+
+    document.getElementById('detail-objectives').addEventListener('change', function(e){
+      const target = e.target;
+      if(target.matches('input[type="checkbox"][data-obj-id]')){
+        const objId = target.dataset.objId;
+        Store.set('lp.obj.' + objId, target.checked);
+        const row = document.querySelector('[data-obj-row="' + objId + '"]');
+        if(row) row.classList.toggle('done', target.checked);
+      }
+    });
+
+    document.getElementById('detail-notes-box').addEventListener('input', function(e){
+      const cardId = e.target.dataset.cardId;
+      if(cardId) Store.set('lp.notes.' + cardId, e.target.value);
+    });
+
+    document.getElementById('workpackages-grid').addEventListener('click', function(e){
+      const btn = e.target.closest('[data-card-id]');
+      if(btn) openDetail(btn.dataset.cardId);
+    });
+
+    const homeNavBtn = document.querySelector('#topnav [data-view="home"]');
+    if(homeNavBtn){
+      homeNavBtn.addEventListener('click', function(){ showView('home'); });
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     renderWorkPackages();
+    wireDetailEvents();
   });
 
 })();
