@@ -151,9 +151,18 @@
   .pill.status-watch{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
   .pill.status-hold{ color: var(--status-hold); border-color: color-mix(in srgb, var(--status-hold) 40%, var(--line)); }
 
-  .pill.priority-high{ color: var(--status-hold); border-color: color-mix(in srgb, var(--status-hold) 40%, var(--line)); }
-  .pill.priority-medium{ color: var(--status-watch); border-color: color-mix(in srgb, var(--status-watch) 40%, var(--line)); }
-  .pill.priority-low{ color: var(--text-muted); }
+  /* Priority is deliberately NOT color-coded (never red/amber/green) —
+     that treatment is reserved for status, so the two are never
+     misread for each other at a glance. Priority uses a neutral
+     dot-count instead: filled dots = weight, not a RAG signal. */
+  .priority-dots{
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .priority-dots .pdot{ width: 6px; height: 6px; border-radius: 50%; background: var(--line); display: inline-block; }
+  .priority-dots .pdot.filled{ background: var(--text-muted); }
 
   button{ font-family: var(--font-body); cursor: pointer; }
 
@@ -387,6 +396,11 @@
   .pkg-card .pkg-target{
     border-top: 1px solid var(--line);
     padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
   }
   .pkg-card .pkg-target .micro-label{ margin-bottom: 4px; }
   .pkg-card .pkg-target .val{
@@ -394,6 +408,17 @@
     font-size: 12.5px;
     color: var(--text);
   }
+  .pkg-target-side{
+    display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+    flex: 0 0 auto;
+  }
+  .pkg-next-ms{
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .pkg-next-ms.overdue{ color: var(--status-hold); }
   .pkg-card-add{
     background: transparent;
     border: 1px dashed var(--line);
@@ -535,14 +560,6 @@
 
   .priority-select-row{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .priority-select-row select{ width: auto; flex: 0 0 auto; }
-  .priority-dots{
-    display: inline-flex; align-items: center; gap: 5px;
-    font-family: var(--font-mono); font-size: 10px;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--text-muted);
-  }
-  .priority-dots .pdot{ width: 6px; height: 6px; border-radius: 50%; background: var(--line); display: inline-block; }
-  .priority-dots .pdot.filled{ background: var(--text-muted); }
 
   .detail-block{ margin-bottom: 8px; }
   .empty-state{
@@ -674,6 +691,26 @@
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 4px;
+  }
+
+  .progress-block{ margin-bottom: 24px; }
+  .progress-label-row{
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
+  }
+  .progress-value{ font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+  .progress-bar-track{
+    height: 9px;
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .progress-bar-fill{
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.2s ease;
   }
 
   .table-wrap{
@@ -1117,6 +1154,14 @@
           <label class="micro-label" for="input-depositTarget">Deposit Target (£)</label>
           <input type="number" id="input-depositTarget" min="0" step="50">
         </div>
+      </div>
+
+      <div class="progress-block">
+        <div class="progress-label-row">
+          <span class="micro-label">Deposit Progress</span>
+          <span class="progress-value" id="savings-progress-text">—</span>
+        </div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="savings-progress-fill"></div></div>
       </div>
 
       <div class="stat-row">
@@ -1706,6 +1751,12 @@
     const grid = document.getElementById('workpackages-grid');
     if(!grid) return;
     grid.innerHTML = LP.cards.map(function(c, i){
+      const info = nextMilestoneInfo(c);
+      const nextMsHtml = info
+        ? '<span class="pkg-next-ms' + (info.overdue ? ' overdue' : '') + '" title="' + escapeHTML(info.label) + '">' +
+            (info.overdue ? 'Overdue ' + info.days + 'd' : (info.days === 0 ? 'Due today' : 'Next ' + info.days + 'd')) +
+          '</span>'
+        : '<span class="pkg-next-ms">No milestones</span>';
       return (
         '<button type="button" class="card pkg-card status-' + c.status + '" data-card-id="' + c.id + '">' +
           '<div class="pkg-top">' +
@@ -1715,8 +1766,8 @@
           '<h3>' + escapeHTML(c.title) + '</h3>' +
           '<p class="pkg-summary">' + escapeHTML(c.summary) + '</p>' +
           '<div class="pkg-target">' +
-            '<div class="micro-label">Target</div>' +
-            '<div class="val">' + escapeHTML(c.target || '—') + '</div>' +
+            '<div class="pkg-target-main"><div class="micro-label">Target</div><div class="val">' + escapeHTML(c.target || '—') + '</div></div>' +
+            '<div class="pkg-target-side">' + priorityDotsHTML(c.priority) + nextMsHtml + '</div>' +
           '</div>' +
         '</button>'
       );
@@ -1838,28 +1889,43 @@
     renderNextMilestoneBanner(c);
   }
 
-  function renderNextMilestoneBanner(c){
-    const el = document.getElementById('detail-next-milestone');
-    if(!el) return;
+  /* Shared by the overview card footer and the detail page banner —
+     nearest upcoming (not-done, date >= today) milestone, or if none,
+     the most recently missed overdue one. Null if there are none at all. */
+  function nextMilestoneInfo(c){
     const today = todayISO();
     const upcoming = c.milestones.filter(function(m){ return !m.done && m.date >= today; }).sort(function(a, b){ return a.date < b.date ? -1 : 1; });
     if(upcoming.length){
       const days = Math.round((new Date(upcoming[0].date + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
-      el.className = 'next-milestone-banner upcoming';
-      el.textContent = days === 0
-        ? 'Next: "' + upcoming[0].label + '" — today.'
-        : 'Next: "' + upcoming[0].label + '" — in ' + days + ' day' + (days === 1 ? '' : 's') + '.';
-      return;
+      return { label: upcoming[0].label, days: days, overdue: false };
     }
     const overdue = c.milestones.filter(function(m){ return !m.done && m.date < today; }).sort(function(a, b){ return a.date > b.date ? -1 : 1; });
     if(overdue.length){
       const days = Math.round((new Date(today + 'T00:00:00') - new Date(overdue[0].date + 'T00:00:00')) / 86400000);
-      el.className = 'next-milestone-banner overdue';
-      el.textContent = '"' + overdue[0].label + '" is overdue by ' + days + ' day' + (days === 1 ? '' : 's') + '.';
+      return { label: overdue[0].label, days: days, overdue: true };
+    }
+    return null;
+  }
+  LP.nextMilestoneInfo = nextMilestoneInfo;
+
+  function renderNextMilestoneBanner(c){
+    const el = document.getElementById('detail-next-milestone');
+    if(!el) return;
+    const info = nextMilestoneInfo(c);
+    if(!info){
+      el.className = 'next-milestone-banner';
+      el.textContent = 'No upcoming milestones.';
       return;
     }
-    el.className = 'next-milestone-banner';
-    el.textContent = 'No upcoming milestones.';
+    if(info.overdue){
+      el.className = 'next-milestone-banner overdue';
+      el.textContent = '"' + info.label + '" is overdue by ' + info.days + ' day' + (info.days === 1 ? '' : 's') + '.';
+      return;
+    }
+    el.className = 'next-milestone-banner upcoming';
+    el.textContent = info.days === 0
+      ? 'Next: "' + info.label + '" — today.'
+      : 'Next: "' + info.label + '" — in ' + info.days + ' day' + (info.days === 1 ? '' : 's') + '.';
   }
 
   function openDetail(cardId){
@@ -2203,10 +2269,25 @@
       );
     }).join('');
     document.getElementById('savings-table-body').innerHTML = rows;
+    renderSavingsProgress(inputs);
 
     return rates;
   }
   LP.renderSavingsProgramme = renderSavingsProgramme;
+
+  function renderSavingsProgress(inputs){
+    const textEl = document.getElementById('savings-progress-text');
+    const fillEl = document.getElementById('savings-progress-fill');
+    if(!textEl || !fillEl) return;
+    if(!inputs.depositTarget || inputs.depositTarget <= 0){
+      textEl.textContent = 'No deposit target set';
+      fillEl.style.width = '0%';
+      return;
+    }
+    const pct = Math.max(0, Math.min(1, inputs.currentSavings / inputs.depositTarget));
+    textEl.textContent = fmtGBP(inputs.currentSavings) + ' of ' + fmtGBP(inputs.depositTarget) + ' (' + Math.round(pct * 100) + '%)';
+    fillEl.style.width = (pct * 100) + '%';
+  }
 
   function initSavingsProgramme(){
     const inputs = loadSavingsInputs();
