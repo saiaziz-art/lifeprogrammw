@@ -1,0 +1,19 @@
+From: Property Alerts <alerts@example-portal.test>
+To: me@example.test
+Subject: TEST FIXTURE - 2 new properties match your search
+Message-ID: <test-fixture-0001@example.test>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><body>
+<p>TEST FIXTURE — synthetic alert email for automated tests.</p>
+<table>
+<tr><td><a href="https://www.rightmove.co.uk/properties/111111111?utm_source=alert">Plot for sale</a></td></tr>
+<tr><td>Guide Price £95,000</td></tr>
+<tr><td>Building plot with outline planning, 0.25 acres, Church Lane, Sway SO41 6AB</td></tr>
+<tr><td><a href="https://click.example-portal.test/t?url=https%3A%2F%2Fwww.zoopla.co.uk%2Ffor-sale%2Fdetails%2F22222222">Land for sale</a></td></tr>
+<tr><td>Offers over £150,000</td></tr>
+<tr><td>Paddock of 1.5 acres near the village, Bransgore</td></tr>
+<tr><td><a href="https://www.example-portal.test/unsubscribe">Unsubscribe</a></td></tr>
+</table>
+</body></html>
