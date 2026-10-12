@@ -79,7 +79,8 @@ def mark_posted(db: Session, o: Outreach, actor: str, *, posted_on: dt.date, pos
     o.status = "posted"
     o.provider = "manual_post"
     o.delivery_status = "posted_by_you"
-    o.sent_at = dt.datetime.combine(posted_on, dt.time(12, 0), tzinfo=dt.UTC)
+    now = utcnow()
+    o.sent_at = now if posted_on == now.date() else dt.datetime.combine(posted_on, dt.time(12, 0), tzinfo=dt.UTC)
     o.delivery_detail = (o.delivery_detail or {}) | {"declared_by": actor, "postage_paid_gbp": postage_paid_gbp, "pdf_sha256": letters.pdf_sha(pdf), "note": "Self-declared posting; Royal Mail delivery is not tracked."}
     db.add(AuditLog(actor=actor, action="outreach.posted", entity="outreach", entity_id=str(o.id), detail={"posted_on": posted_on.isoformat(), "approved_hash": o.approved_hash}))
     _contacted(db, o, actor, f"Letter {o.generator_meta.get('reference', o.id)} posted by you on {posted_on:%d %b %Y}")

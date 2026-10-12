@@ -183,7 +183,7 @@ def evaluate(db: Session, o: Outreach, *, at_send: bool = False) -> dict[str, An
         if any(x.status in ("sending", "delivery_unknown") for x in sent):
             checks.append(_check("frequency", "Contact frequency", "fail", "An earlier message is still sending or its delivery is unconfirmed"))
         elif recent:
-            checks.append(_check("frequency", "Contact frequency", "fail", f"Contacted {min((now - x.sent_at).days for x in recent)} days ago (minimum {cfg.min_days_between_contacts})"))
+            checks.append(_check("frequency", "Contact frequency", "fail", f"Contacted {max(0, min((now - x.sent_at).days for x in recent))} days ago (minimum {cfg.min_days_between_contacts})"))
         elif len(year) >= cfg.max_contacts_per_year:
             checks.append(_check("frequency", "Contact frequency", "fail", f"Already contacted {len(year)} times in 12 months (maximum {cfg.max_contacts_per_year})"))
         else:
@@ -201,7 +201,7 @@ def evaluate(db: Session, o: Outreach, *, at_send: bool = False) -> dict[str, An
             elif len(prior_fu) >= cfg.max_follow_ups:
                 checks.append(_check("follow_up", "Follow-up rules", "fail", f"Maximum of {cfg.max_follow_ups} follow-up reached"))
             else:
-                days = (utcnow() - min(x.sent_at for x in initials if x.sent_at)).days
+                days = max(0, (utcnow() - min(x.sent_at for x in initials if x.sent_at)).days)
                 ok = days >= cfg.follow_up_after_days
                 checks.append(_check("follow_up", "Follow-up rules", "pass" if ok else "fail", f"{days} days since the first approach (minimum {cfg.follow_up_after_days})"))
     dup = db.scalar(select(Outreach).where(Outreach.id != o.id, Outreach.recipient_hash == o.recipient_hash, Outreach.status.in_(("awaiting_approval", "approved", "sending"))).limit(1))

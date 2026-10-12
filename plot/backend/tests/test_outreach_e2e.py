@@ -181,6 +181,7 @@ def test_letter_workflow_end_to_end(client, db, synthetic_area):
     client.post(f"/api/offmarket/outreach/{again['id']}/reject", json={"instructions": "not needed"}, headers=H)
     fu = client.post(f"/api/offmarket/leads/{wide.id}/drafts", json={"kind": "follow_up"}, headers=H).json()
     assert fu["status"] == "needs_changes" and "days" in fu["review_reason"]  # too early for the one follow-up
+    assert "-1" not in fu["review_reason"] and "Contacted 0 days ago" in fu["review_reason"]  # posted today reads as 0 days, never negative
     client.post(f"/api/offmarket/outreach/{fu['id']}/reject", json={}, headers=H)
 
     # 10. the owner writes back; reply categorised, suggested reply prepared for approval
