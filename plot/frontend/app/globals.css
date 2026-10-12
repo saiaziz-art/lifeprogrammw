@@ -166,3 +166,5 @@ textarea { min-height: 90px; resize: vertical; }
 .login-wrap { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(160deg, #1d2c2a 0%, #2f5d50 100%); }
 .login-card { width: min(420px, 92vw); }
 .legend { font-size: 12px; color: var(--ink-2); }
+.checkline { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; font-size: 13px; }
+.checkline input { margin-top: 3px; }

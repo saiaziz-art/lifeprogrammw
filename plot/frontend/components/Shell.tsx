@@ -12,6 +12,7 @@ const NAV = [
   { href: "/deals", label: "Deal Explorer", ico: "≡" },
   { href: "/design", label: "Design Studio", ico: "⌂" },
   { href: "/pipeline", label: "Acquisition Pipeline", ico: "➝" },
+  { href: "/offmarket", label: "Off-Market CRM", ico: "✉" },
   { href: "/import", label: "Add & Inbox", ico: "+" },
   { href: "/settings", label: "Preferences", ico: "⚙" },
   { href: "/admin", label: "Admin", ico: "▤" },
@@ -22,12 +23,14 @@ export function Shell({ children, title }: { children: ReactNode; title?: string
   const router = useRouter();
   const [run, setRun] = useState<Run | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [sandbox, setSandbox] = useState(false);
 
   useEffect(() => {
-    api<{ authenticated: boolean; setup_required: boolean; email: string | null }>("/auth/state")
+    api<{ authenticated: boolean; setup_required: boolean; email: string | null; sandbox?: boolean }>("/auth/state")
       .then((s) => {
         if (!s.authenticated) router.replace("/login");
         else setEmail(s.email);
+        setSandbox(!!s.sandbox);
       })
       .catch(() => router.replace("/login"));
     api<Run[]>("/admin/runs?limit=1")
@@ -74,6 +77,11 @@ export function Shell({ children, title }: { children: ReactNode; title?: string
             </button>
           </div>
         </div>
+        {sandbox ? (
+          <div className="notice warn" style={{ margin: "12px 28px 0", fontWeight: 500 }}>
+            SANDBOX — separate test environment with clearly labelled mock owners and synthetic sites. Mailbox connections and postal submission are disabled; nothing here can reach a real person.
+          </div>
+        ) : null}
         <div className="page">{children}</div>
       </div>
     </div>

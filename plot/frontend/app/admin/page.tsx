@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Chip, Empty, ErrorBox, Loading } from "@/components/ui";
 import { api, ago, gbp, label, useApi, when } from "@/lib/api";
 import type { Run } from "@/lib/types";
 
-const TABS = ["Health & runs", "Sources", "Integrations", "Cost assumptions", "Missing information", "Expenses", "Audit log"] as const;
+const TABS = ["Health & runs", "Sources", "Integrations", "Mail", "Cost assumptions", "Missing information", "Expenses", "Audit log"] as const;
 
 export default function Admin() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Health & runs");
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "mail") setTab("Mail");
+  }, []);
   return (
     <Shell title="Administrator">
       <div className="page-head">
@@ -29,6 +32,7 @@ export default function Admin() {
       {tab === "Health & runs" ? <Health /> : null}
       {tab === "Sources" ? <Sources /> : null}
       {tab === "Integrations" ? <Secrets /> : null}
+      {tab === "Mail" ? <Mail /> : null}
       {tab === "Cost assumptions" ? <Rates /> : null}
       {tab === "Missing information" ? <Missing /> : null}
       {tab === "Expenses" ? <Expenses /> : null}
@@ -365,6 +369,94 @@ function Secrets() {
 }
 
 type Rate = { key: string; category: string; description: string; unit: string; low: number; base: number; high: number; basis: string; source: string; source_date: string; user_override: boolean };
+
+type MailAccounts = { items: { id: number; provider: string; email: string; status: string; scopes: string | null; connected_at: string; last_sync_at: string | null; last_error: string | null }[]; redirect_uri: string; configured: Record<string, boolean>; sandbox: boolean };
+
+function Mail() {
+  const { data, error, reload } = useApi<MailAccounts>("/mail/accounts");
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("connected")) setMsg("Mailbox connected.");
+    if (q.get("error")) setMsg(`Connection failed: ${q.get("error")}`);
+  }, []);
+  async function connect(provider: string) {
+    setMsg(null);
+    try {
+      const r = await api<{ url: string }>("/mail/oauth/start", { method: "POST", json: { provider } });
+      window.location.href = r.url;
+    } catch (e) {
+      setMsg(`Cannot start: ${(e as Error).message}`);
+    }
+  }
+  if (!data) return <ErrorBox error={error} />;
+  return (
+    <div className="grid g2">
+      <div className="card stack">
+        <h3>Connected mailboxes</h3>
+        {msg ? <div className={`notice ${msg.startsWith("Mailbox") ? "info" : "bad"}`}>{msg}</div> : null}
+        {data.sandbox ? <div className="notice warn">Mailbox connections are disabled in the sandbox environment.</div> : null}
+        {data.items.length ? (
+          <table className="t">
+            <thead>
+              <tr>
+                <th>Mailbox</th>
+                <th>Status</th>
+                <th>Last reply check</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((m) => (
+                <tr key={m.id}>
+                  <td>
+                    {m.email}
+                    <div className="small">{m.provider === "google" ? "Gmail" : "Microsoft 365 / Outlook"} · {m.scopes}</div>
+                  </td>
+                  <td>
+                    <Chip tone={m.status === "connected" ? "good" : "warn"}>{m.status}</Chip>
+                    {m.last_error ? <div className="small err">{m.last_error}</div> : null}
+                  </td>
+                  <td>{m.last_sync_at ? ago(m.last_sync_at) : "never"}</td>
+                  <td>
+                    {m.status === "connected" ? (
+                      <button className="btn sm danger" onClick={async () => { await api(`/mail/accounts/${m.id}/disconnect`, { method: "POST" }); reload(); }}>
+                        Disconnect
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <Empty>No mailbox connected. Letters work without one; email needs a connected mailbox.</Empty>
+        )}
+        <div className="row">
+          <button className="btn primary" disabled={data.sandbox || !data.configured.google} onClick={() => connect("google")}>
+            Connect Gmail
+          </button>
+          <button className="btn primary" disabled={data.sandbox || !data.configured.microsoft} onClick={() => connect("microsoft")}>
+            Connect Outlook
+          </button>
+        </div>
+      </div>
+      <div className="card stack small">
+        <h3>Setting up OAuth</h3>
+        <div>
+          PLOT uses your own OAuth app, so tokens stay between you and your provider. Register this redirect URI: <code>{data.redirect_uri}</code>
+        </div>
+        <div>
+          <b>Google:</b> Google Cloud console → APIs &amp; Services → enable the Gmail API → OAuth client (Web). Scopes requested: <code>gmail.compose</code> (create drafts and send) and <code>gmail.readonly</code> (find replies). Put the client ID and secret in Integrations as <code>google_client_id</code> / <code>google_client_secret</code>. {data.configured.google ? "✓ configured" : "Not configured."}
+        </div>
+        <div>
+          <b>Microsoft:</b> Entra admin centre → App registrations → Web redirect URI as above; delegated permissions <code>Mail.ReadWrite</code>, <code>Mail.Send</code>, <code>User.Read</code>, <code>offline_access</code>. Store <code>ms_client_id</code> / <code>ms_client_secret</code>. {data.configured.microsoft ? "✓ configured" : "Not configured."}
+        </div>
+        <div className="notice">Sending happens only for a message you approved, to the exact recipient you approved, and PLOT records the provider&apos;s own message ID. “Sent” means accepted by your provider — not delivered or read.</div>
+      </div>
+    </div>
+  );
+}
 
 function Rates() {
   const { data, error, reload } = useApi<Rate[]>("/admin/cost-rates");

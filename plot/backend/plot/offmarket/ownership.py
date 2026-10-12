@@ -113,7 +113,7 @@ def verify_title(db: Session, doc: TitleDocument, actor: str, *, confirm_matches
         verified_by=actor,
         verified_at=now,
         retention_until=retention_date(db),
-        notes=(f"Company number {company_number}. " if company_number else "") + ("Edited by you during verification. " if edits else ""),
+        notes=(f"Company number {company_number}. " if company_number else "") + ("Edited by you during verification. " if _edited(ex, name, lines, postcode, kind, e) else ""),
     )
     db.add(contact)
     doc.status = "verified"
@@ -131,6 +131,14 @@ def verify_title(db: Session, doc: TitleDocument, actor: str, *, confirm_matches
     db.add(AuditLog(actor=actor, action="owner.verified", entity="lead", entity_id=str(lead.id), detail={"title_document": doc.id, "kind": kind, "edited": bool(edits)}))
     db.flush()
     return contact
+
+
+def _edited(ex: dict[str, Any], name: str, lines: list[str], postcode: str | None, kind: str, e: dict[str, Any]) -> bool:
+    """True when what you confirmed differs from what was read off the register."""
+    norm = lambda v: " ".join(str(v or "").split()).lower()  # noqa: E731
+    reg_name = " and ".join(p["name"] for p in ex.get("proprietors", []))
+    reg_lines = T.address_lines(ex.get("proprietor_address"))
+    return norm(name) != norm(reg_name) or [norm(x) for x in lines] != [norm(x) for x in reg_lines] or norm(postcode) != norm(ex.get("proprietor_postcode")) or kind != T.contact_kind(ex)
 
 
 def reject_title(db: Session, doc: TitleDocument, actor: str, reason: str) -> None:

@@ -55,7 +55,7 @@ def auth_state(request: Request, db: Session = Depends(get_db)) -> dict:
     n = db.scalar(select(func.count()).select_from(User))
     user = resolve_session(db, request.cookies.get(SESSION_COOKIE))
     db.commit()
-    return {"setup_required": n == 0, "authenticated": user is not None, "email": user.email if user else None}
+    return {"setup_required": n == 0, "authenticated": user is not None, "email": user.email if user else None, "sandbox": get_settings().is_sandbox}
 
 
 def _set_cookie(resp: Response, token: str) -> None:

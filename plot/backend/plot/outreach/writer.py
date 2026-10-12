@@ -475,12 +475,21 @@ def footer_text(f: Facts) -> str:
             + f", a private buyer. {src} If you would prefer not to receive further messages, reply to {contact} quoting {f.reference} and we will not contact you again."
         )
     keep = f"until {f.retention_until}" if f.retention_until else "only for a short period"
+    if f.kind == "reply":
+        return (
+            f"About this {('letter' if f.channel == 'post' else 'email')}: from {who}"
+            + (f", sent on their behalf by {f.agent_name}" if f.persona == "represented" and f.agent_name else "")
+            + f", replying to you about {prop}. I keep our correspondence only while we are discussing this and will delete it if you ask. "
+            f"If you'd rather not hear from me again, just say so quoting {f.reference} and I won't write again. "
+            "You can also complain to the Information Commissioner's Office (ico.org.uk)."
+        )
+    once = "This is my only follow-up" if f.kind == "follow_up" else "I'm writing once"
     return (
         f"About this {('letter' if f.channel == 'post' else 'email')}: it is from {who}"
         + (f", sent on their behalf by {f.agent_name}{(' of ' + f.agent_company) if f.agent_company else ''}" if f.persona == "represented" and f.agent_name else "")
         + f", a private individual hoping to buy land for a home. I found your name and address in the public HM Land Registry register for {prop}"
         + (f" (title {f.title_number})" if f.title_number else "")
-        + f". I'm writing once, relying on legitimate interests, and I will keep your details {keep} to deal with any reply, then delete them. "
+        + f". {once}, relying on legitimate interests, and I will keep your details {keep} to deal with any reply, then delete them. "
         f"You can ask what I hold, ask me to delete it, or tell me not to contact you again — reply to {contact} quoting {f.reference} and I won't write again. "
         "You can also complain to the Information Commissioner's Office (ico.org.uk)."
     )
@@ -522,7 +531,7 @@ def validate(d: Draft, f: Facts, *, buyer_confirmed: dict[str, bool] | None = No
         issues.append({"code": "persona", "severity": "warn", "message": f"Persona is 'you and your {f.partner_term}' but the draft doesn't say so"})
     if f.persona != "couple" and re.search(r"\bmy (wife|husband|partner)\b", low):
         issues.append({"code": "persona", "severity": "block", "message": "Draft mentions a partner but your persona is not set to a couple"})
-    if not d.footer or ("land registry" not in d.footer.lower() and f.recipient_kind not in ("company", "public_body")) or f.reference not in d.footer:
+    if not d.footer or ("land registry" not in d.footer.lower() and f.recipient_kind not in ("company", "public_body") and f.kind != "reply") or f.reference not in d.footer or "ico.org.uk" not in d.footer and f.recipient_kind not in ("company", "public_body"):
         issues.append({"code": "privacy_notice", "severity": "block", "message": "The privacy and opt-out notice is missing or incomplete"})
     if re.search(r"\bdear (mr|mrs|ms|miss)\b", low):
         issues.append({"code": "assumed_title", "severity": "warn", "message": "Avoid assuming a title (Mr/Mrs/Ms) unless the owner uses one"})

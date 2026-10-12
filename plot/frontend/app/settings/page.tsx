@@ -46,6 +46,7 @@ export default function Settings() {
     o[keys[keys.length - 1]] = v;
     setP(next);
   };
+  const setBuyer = (k: string, v: unknown) => setP({ ...p, buyer: { ...p.buyer, [k]: v, facts_confirmed: false, confirmed_at: null } });
   const wsum = ["planning", "financial", "physical", "location", "discount"].reduce((a, k) => a + Number(p.weights[k] || 0), 0);
 
   async function save() {
@@ -164,6 +165,136 @@ export default function Settings() {
             + Add area (edit bbox)
           </button>
           <div className="small">Bounding boxes in WGS84: min lon, min lat, max lon, max lat.</div>
+        </div>
+        <div className="card stack" id="offmarket">
+          <h3>Off-market: who the letters come from</h3>
+          <div className="small">Drafts use only what you confirm here. Changing any detail asks you to confirm again.</div>
+          <label className="f">
+            Write as
+            <select value={p.buyer.persona} onChange={(e) => setBuyer("persona", e.target.value)}>
+              <option value="couple">Me and my partner (e.g. “My wife and I…”)</option>
+              <option value="private">A private buyer (just me)</option>
+              <option value="represented">Professionally represented (an agent writes on my behalf)</option>
+            </select>
+          </label>
+          <div className="grid g3">
+            <label className="f">
+              First name (sign-off)
+              <input value={p.buyer.first_name ?? ""} onChange={(e) => setBuyer("first_name", e.target.value || null)} />
+            </label>
+            <label className="f">
+              Surname
+              <input value={p.buyer.last_name ?? ""} onChange={(e) => setBuyer("last_name", e.target.value || null)} />
+            </label>
+            <label className="f">
+              Partner
+              <select value={p.buyer.partner_term ?? ""} onChange={(e) => setBuyer("partner_term", e.target.value || null)}>
+                <option value="wife">wife</option>
+                <option value="husband">husband</option>
+                <option value="partner">partner</option>
+                <option value="">— (not mentioned)</option>
+              </select>
+            </label>
+          </div>
+          <Check label="We are moving back to the UK (mentioned in letters)" value={!!p.buyer.returning_to_uk} onChange={(v) => setBuyer("returning_to_uk", v)} />
+          <label className="f">
+            Local connection — only if true (e.g. “My parents live in Ringwood”)
+            <input value={p.buyer.local_connection ?? ""} onChange={(e) => setBuyer("local_connection", e.target.value || null)} />
+          </label>
+          <label className="f">
+            Funding statement — only if confirmed (e.g. “We have a self-build mortgage agreed in principle”)
+            <input value={p.buyer.funding_statement ?? ""} onChange={(e) => setBuyer("funding_statement", e.target.value || null)} />
+          </label>
+          {p.buyer.persona === "represented" ? (
+            <div className="grid g2">
+              <label className="f">
+                Agent name
+                <input value={p.buyer.agent_name ?? ""} onChange={(e) => setBuyer("agent_name", e.target.value || null)} />
+              </label>
+              <label className="f">
+                Agent company
+                <input value={p.buyer.agent_company ?? ""} onChange={(e) => setBuyer("agent_company", e.target.value || null)} />
+              </label>
+            </div>
+          ) : null}
+          <label className="f">
+            Reply postal address (printed on letters)
+            <input value={p.buyer.reply_postal_address ?? ""} onChange={(e) => setBuyer("reply_postal_address", e.target.value || null)} />
+          </label>
+          <div className="grid g2">
+            <label className="f">
+              Reply email
+              <input type="email" value={p.buyer.reply_email ?? ""} onChange={(e) => setBuyer("reply_email", e.target.value || null)} />
+            </label>
+            <label className="f">
+              Reply phone (optional)
+              <input value={p.buyer.reply_phone ?? ""} onChange={(e) => setBuyer("reply_phone", e.target.value || null)} />
+            </label>
+          </div>
+          <div className="notice small">Letters never claim you are a cash buyer, locally resident, fully financed or able to complete quickly unless one of the confirmed statements above says so.</div>
+          <label className="checkline">
+            <input type="checkbox" checked={!!p.buyer.facts_confirmed} onChange={(e) => setP({ ...p, buyer: { ...p.buyer, facts_confirmed: e.target.checked, confirmed_at: e.target.checked ? new Date().toISOString() : null } })} />
+            <span>
+              <b>I confirm these details are true and may be used in letters and emails.</b>
+              {p.buyer.confirmed_at && p.buyer.facts_confirmed ? <span className="small"> Confirmed {new Date(p.buyer.confirmed_at).toLocaleDateString("en-GB")}.</span> : null}
+            </span>
+          </label>
+        </div>
+        <div className="card stack">
+          <h3>Off-market: outreach rules</h3>
+          <div className="grid g3">
+            <Num label="Drafts prepared per day (max)" value={p.outreach.daily_draft_limit} onChange={(v) => set("outreach.daily_draft_limit", v)} />
+            <Num label="Optional follow-up after" value={p.outreach.follow_up_after_days} onChange={(v) => set("outreach.follow_up_after_days", v)} suffix="days" />
+            <Num label="Follow-ups (0 or 1)" value={p.outreach.max_follow_ups} onChange={(v) => set("outreach.max_follow_ups", v)} />
+            <Num label="Min days between contacts" value={p.outreach.min_days_between_contacts} onChange={(v) => set("outreach.min_days_between_contacts", v)} />
+            <Num label="Max contacts per owner / year" value={p.outreach.max_contacts_per_year} onChange={(v) => set("outreach.max_contacts_per_year", v)} />
+            <Num label="Keep personal data for" value={p.outreach.retention_months} onChange={(v) => set("outreach.retention_months", v)} suffix="months" />
+          </div>
+          <div className="grid g3">
+            <label className="f">
+              Postal route
+              <select value={p.outreach.postal_provider} onChange={(e) => set("outreach.postal_provider", e.target.value)}>
+                <option value="manual">I print and post letters myself</option>
+                <option value="stannp">Stannp print &amp; post (API key in Admin)</option>
+              </select>
+            </label>
+            <Num label="Postage estimate (£)" value={p.outreach.postage_estimate_gbp} onChange={(v) => set("outreach.postage_estimate_gbp", v)} step={0.01} />
+            <div style={{ alignSelf: "end" }}>
+              <Check label="Postal API in test mode" value={p.outreach.postal_provider_test_mode} onChange={(v) => set("outreach.postal_provider_test_mode", v)} />
+            </div>
+          </div>
+          <label className="f">
+            Legitimate interests assessment (recorded with every letter to an individual)
+            <textarea value={p.outreach.lia_summary} onChange={(e) => set("outreach.lia_summary", e.target.value)} style={{ minHeight: 110 }} />
+          </label>
+        </div>
+        <div className="card stack">
+          <h3>Off-market: prospecting areas</h3>
+          <div className="small">Each morning PLOT analyses these circles for garden plots, edge-of-settlement paddocks, outbuildings, replacement dwellings, derelict buildings and past residential applications. Discovery never contacts anyone.</div>
+          {p.prospecting_areas.map((a: any, i: number) => (
+            <div key={i} className="row" style={{ alignItems: "flex-end" }}>
+              <Check label="" value={a.enabled} onChange={(v) => set(`prospecting_areas.${i}.enabled`, v)} />
+              <label className="f" style={{ flex: 2 }}>
+                Name
+                <input value={a.name} onChange={(e) => set(`prospecting_areas.${i}.name`, e.target.value)} />
+              </label>
+              <label className="f" style={{ flex: 2 }}>
+                Centre (lon, lat)
+                <input value={`${a.lon}, ${a.lat}`} onChange={(e) => { const [lo, la] = e.target.value.split(",").map((x) => Number(x.trim())); const next = structuredClone(p); next.prospecting_areas[i].lon = lo; next.prospecting_areas[i].lat = la; setP(next); }} />
+              </label>
+              <label className="f" style={{ flex: 1 }}>
+                Radius (m)
+                <input type="number" value={a.radius_m} onChange={(e) => set(`prospecting_areas.${i}.radius_m`, Number(e.target.value))} />
+              </label>
+              <button className="btn sm danger" onClick={() => set("prospecting_areas", p.prospecting_areas.filter((_: unknown, j: number) => j !== i))}>
+                Remove
+              </button>
+            </div>
+          ))}
+          <button className="btn sm" onClick={() => set("prospecting_areas", [...p.prospecting_areas, { name: "New area", lon: -1.79, lat: 50.85, radius_m: 800, enabled: true, types: ["garden_subdivision", "edge_paddock", "outbuilding", "replacement", "derelict", "planning_history"] }])}>
+            + Add area
+          </button>
+          <div className="small">Keep areas small (100–2,000 m radius): the analysis reads every registered title extent and building inside the circle.</div>
         </div>
         <div className="card stack">
           <h3>Exclusions</h3>

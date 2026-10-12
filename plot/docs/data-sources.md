@@ -18,7 +18,12 @@ and must be fixed by allowing the hosts in the deployment's network policy.
 | `raw.githubusercontent.com` | archived brownfield-register snapshots (fallback) | Fallback only |
 | `epc.opendatacommunities.org` | EPC floor areas (optional, needs free key) | £/m² comparables |
 | `api-proxy.ofcom.org.uk` | broadband coverage (optional, needs free key) | Utilities |
-| `api.anthropic.com` | optional AI extraction from alert emails | Optional |
+| `api.anthropic.com` | optional AI extraction, outreach writer and reply second opinion | Optional |
+| `overpass-api.de` | building footprints and roads for off-market discovery, if OS OpenMap Local is not imported | Off-market discovery |
+| `api.company-information.service.gov.uk` | registered office and status of company proprietors (free key) | Optional |
+| `oauth2.googleapis.com`, `gmail.googleapis.com` | Gmail OAuth token exchange, drafts, send, reply sync | Email outreach |
+| `login.microsoftonline.com`, `graph.microsoft.com` | Microsoft 365 / Outlook OAuth, drafts, send, reply sync | Email outreach |
+| `api-eu1.stannp.com` | Stannp print-and-post letters (optional) | Optional |
 | your IMAP / SMTP hosts | alert-email ingestion, digest delivery | Optional |
 
 Browser-side (map tiles, loaded by your browser not the server): `tiles.openfreemap.org`,
@@ -43,6 +48,15 @@ Browser-side (map tiles, loaded by your browser not the server): `tiles.openfree
 | EPC (`mhclg.epc`) | `epc.opendatacommunities.org/api/v1/domestic/search` (Basic auth) | OGL; address terms | — | not configured (key) |
 | Ofcom (`ofcom.coverage`) | `api-proxy.ofcom.org.uk/broadband/coverage/{pc}` | Ofcom terms | — | not configured (key) |
 | ArcGIS layers (`arcgis.layers`) | any FeatureServer you add (Coal Authority, NE, SSEN…) | per layer | standard ArcGIS REST `query` | not configured |
+| Off-market discovery (`offmarket.discovery`) | title extents + footprints + roads + constraints per prospecting area | derived from OGL / ODbL data | analyser unit-tested on synthetic geometry; full pipeline tested with mocked layers | network_blocked |
+| OS OpenMap – Local (import) | `plot import-os-openmap <gpkg>` → `ref_features` | OGL v3.0, OS attribution | GeoPackage reader (`gpkg_contents`, GP header) — not yet run on a real download | not imported |
+| OpenStreetMap via Overpass | `POST https://overpass-api.de/api/interpreter` | ODbL — "© OpenStreetMap contributors" | Overpass QL `out tags geom` | network_blocked |
+| HMLR official copies of the register | bought by you at search-property-information.service.gov.uk, uploaded as PDF | Crown copyright; personal data — used only for the stated purpose | parser tested on synthetic registers in the published layout | user upload |
+| HMLR CCOD / OCOD | — | HMLR licence | keyed by title number; cannot be linked to INSPIRE IDs reliably | **not integrated** |
+| Companies House (`companies_house`) | `GET /company/{number}` (Basic auth, key as username) | OGL | public data API docs | not configured (key) |
+| Gmail API | `users/me/drafts`, `messages/send`, `threads/{id}`, `messages?q=rfc822msgid:` | your own mailbox, OAuth scopes `gmail.compose` + `gmail.readonly` | published REST API; tested with mocks only | not connected |
+| Microsoft Graph mail | `/me/messages`, `/me/messages/{id}/send`, `$filter=conversationId` | your own mailbox, `Mail.ReadWrite` `Mail.Send` | published REST API; tested with mocks only | not connected |
+| Stannp letters | `POST /v1/letters/create` (multipart PDF, `test=true`) | Stannp terms; you pay postage | request format from public docs — **unverified** live | not configured |
 | Rightmove / Zoopla / OnTheMarket / Plotfinder / auctions / agent sites | — | no consumer API or reuse licence; automated extraction not permitted | — | **blocked by terms** (alert emails / manual import instead) |
 
 ## What is deliberately *not* inferred
