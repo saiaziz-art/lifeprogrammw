@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -92,6 +93,9 @@ def verify_title(db: Session, doc: TitleDocument, actor: str, *, confirm_matches
     if not lines:
         raise OwnershipError("no address for the proprietor — enter it exactly as shown on the register")
     postcode = e.get("postcode") or ex.get("proprietor_postcode")
+    # the postcode is stored separately; never repeat it as the last address line
+    if lines and postcode and re.sub(r"\s+", "", lines[-1]).upper() == re.sub(r"\s+", "", postcode).upper():
+        lines = lines[:-1]
     salutation = e.get("salutation") if e.get("salutation") is not None else T.default_salutation(ex, kind)
     company_number = next((p.get("company_number") for p in ex.get("proprietors", []) if p.get("company_number")), None)
     # supersede an earlier verified register contact for this lead

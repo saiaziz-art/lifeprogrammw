@@ -113,6 +113,7 @@ def test_letter_workflow_end_to_end(client, db, synthetic_area):
     assert r.status_code == 422  # both confirmations required
     c = client.post(f"/api/offmarket/titles/{doc['id']}/verify", json={"confirm_matches_land": True, "confirm_details_checked": True}, headers=H).json()
     assert c["verified"] and c["kind"] == "individual" and c["salutation"] == "Alex and Sam" and c["postcode"] == "TE1 1ST"
+    assert c["address_lines"] == ["12 Test Road", "Testville"]  # postcode is stored separately, not repeated as a line
     d = client.get(f"/api/offmarket/leads/{wide.id}").json()
     assert d["stage"] == "owner_verified" and d["ownership_status"] == "verified"
     assert d["contact_method"] == "post"
@@ -163,12 +164,13 @@ def test_letter_workflow_end_to_end(client, db, synthetic_area):
     assert client.post(f"/api/offmarket/outreach/{o['id']}/mark-posted", json={"posted_on": dt.date.today().isoformat()}, headers=H).status_code == 409
     a = _approve(client, edited).json()
     assert a["status"] == "approved"
+    assert a["recipient_address"] == "12 Test Road\nTestville\nTE1 1ST"
 
     # 8. the real printable letter
     final = client.get(f"/api/offmarket/outreach/{o['id']}/pdf?final=1")
     assert final.status_code == 200 and final.headers["content-type"] == "application/pdf"
     text = "".join(p.extract_text() for p in PdfReader(io.BytesIO(final.content)).pages)
-    assert "DRAFT" not in text and "Alex Sandbox-Test" in text and "TE1 1ST" in text and "HM Land Registry" in text and a["reference"] in text
+    assert "DRAFT" not in text and "Alex Sandbox-Test" in text and text.count("TE1 1ST") == 1 and "HM Land Registry" in text and a["reference"] in text
 
     # 9. you post it and record that — the lead moves to Contacted
     p = client.post(f"/api/offmarket/outreach/{o['id']}/mark-posted", json={"posted_on": dt.date.today().isoformat(), "postage_paid_gbp": 0.87}, headers=H).json()
