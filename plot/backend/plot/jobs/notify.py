@@ -43,12 +43,18 @@ def send_webhook(url: str, title: str, body: str) -> None:
 
 
 def deliver_digest(db: Session, digest: Digest, prefs, secrets: dict) -> None:
-    if not digest.items:
+    from plot.offmarket.agent import briefing_has_news
+
+    brief = digest.briefing or {}
+    if not digest.items and not briefing_has_news(brief):
         digest.delivery_status = "nothing_to_send"
         return
     channels = []
     errors = []
     subject = f"PLOT: {len(digest.items)} opportunit{'y' if len(digest.items) == 1 else 'ies'} today"
+    extra = [f"{n} {label}" for n, label in ((brief.get("replies_to_handle"), "owner repl(ies)"), (brief.get("drafts_awaiting_approval"), "draft(s) to approve")) if n]
+    if extra:
+        subject += " · " + ", ".join(extra)
     if _smtp_ready(secrets) and prefs.notifications.email_to:
         try:
             send_email(secrets, prefs.notifications.email_to, subject, digest.body_text)

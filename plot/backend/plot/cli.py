@@ -31,6 +31,13 @@ def main(argv: list[str] | None = None) -> int:
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8000)
     sub.add_parser("status", help="print last runs and source health")
+    osm = sub.add_parser("import-os-openmap", help="import Building and Road layers from an OS OpenMap – Local GeoPackage")
+    osm.add_argument("gpkg")
+    osm.add_argument("--bbox", help="lon/lat filter w,s,e,n (recommended: your prospecting areas)")
+    dn = sub.add_parser("discover-now", help="run off-market discovery for the prospecting areas (never contacts anyone)")
+    dn.add_argument("--queue", action="store_true", help="queue it for the worker instead of running here")
+    sub.add_parser("sandbox-seed", help="(PLOT_ENV=sandbox only) load the synthetic street and mock registers")
+    sub.add_parser("retention-sweep", help="delete personal data past its retention date")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
@@ -126,6 +133,46 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"run #{r.id} {r.kind} {r.trigger} {r.status} {r.started_at:%Y-%m-%d %H:%M} → {r.finished_at and r.finished_at.strftime('%H:%M')} {r.summary}")
             for s in db.scalars(select(Source).order_by(Source.id)).all():
                 print(f"  {s.id:34} {s.kind:9} {str(s.last_status):15} {(s.last_error or '')[:90]}")
+        return 0
+    if args.cmd == "import-os-openmap":
+        from plot.db import session_scope
+        from plot.offmarket.geodata import import_os_openmap
+
+        bbox = tuple(float(x) for x in args.bbox.split(",")) if args.bbox else None
+        with session_scope() as db:
+            print(import_os_openmap(db, args.gpkg, bbox))
+        return 0
+    if args.cmd == "discover-now":
+        from plot.db import new_session, session_scope
+        from plot.jobs.queue import enqueue
+
+        if args.queue:
+            with session_scope() as db:
+                j = enqueue(db, "offmarket_discovery", {"trigger": "cli"})
+                print(f"queued job {j.id if j else '(duplicate)'}")
+            return 0
+        from plot.jobs.worker import handle_offmarket_discovery
+
+        db = new_session()
+        print(json.dumps(handle_offmarket_discovery(db, {"trigger": "cli"}, None), indent=2, default=str))
+        return 0
+    if args.cmd == "sandbox-seed":
+        from plot.config import get_settings
+        from plot.db import session_scope
+        from plot.sandbox import seed
+
+        if not get_settings().is_sandbox:
+            print("refusing: set PLOT_ENV=sandbox and point PLOT_DATABASE_URL at a separate sandbox database")
+            return 2
+        with session_scope() as db:
+            print(json.dumps(seed(db), indent=2, default=str))
+        return 0
+    if args.cmd == "retention-sweep":
+        from plot.db import session_scope
+        from plot.outreach.compliance import retention_sweep
+
+        with session_scope() as db:
+            print(f"records cleared: {retention_sweep(db)}")
         return 0
     return 1
 

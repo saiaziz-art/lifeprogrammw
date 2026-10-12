@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from plot.models import Source
+from plot.offmarket.agent import OffMarketDiscovery
 from plot.security.crypto import get_secret
 from plot.sources.arcgis import ArcGisLayers
 from plot.sources.base import DiscoverySource, EnrichmentSource, SourceAdapter, SourceMeta
@@ -25,6 +26,7 @@ DISCOVERY: list[type[DiscoverySource]] = [
     DigitalLandSnapshots,
     EmailAlertIngest,
     NaptanRailStations,
+    OffMarketDiscovery,
     *BLOCKED_SOURCES,
 ]
 
@@ -77,6 +79,12 @@ SECRET_KEYS = {
     "epc_email": "EPC register account email",
     "epc_api_key": "EPC register API key",
     "ofcom_api_key": "Ofcom API subscription key",
+    "google_client_id": "Google OAuth client ID (Gmail connection)",
+    "google_client_secret": "Google OAuth client secret",
+    "ms_client_id": "Microsoft Entra app (client) ID (Outlook connection)",
+    "ms_client_secret": "Microsoft Entra client secret",
+    "stannp_api_key": "Stannp API key (print-and-post letters)",
+    "companies_house_api_key": "Companies House API key (company proprietors)",
 }
 
 

@@ -20,10 +20,12 @@ dependencies = [
   "croniter>=2.0",
   "python-multipart>=0.0.9",
   "pyyaml>=6.0",
+  "reportlab>=4.2",
+  "pypdf>=5.0",
 ]
 
 [project.optional-dependencies]
-ai = ["anthropic>=0.40"]
+ai = ["anthropic>=1.13"]
 dev = ["pytest>=8", "respx>=0.21"]
 
 [project.scripts]

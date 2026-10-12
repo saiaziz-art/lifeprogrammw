@@ -14,7 +14,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from plot import __version__
-from plot.api import routes_admin, routes_sites, routes_workflow
+from plot.api import routes_admin, routes_offmarket, routes_sites, routes_workflow
 from plot.api.deps import audit, current_user
 from plot.config import get_settings
 from plot.db import get_db
@@ -115,3 +115,4 @@ def me(user: User = Depends(current_user)) -> dict:
 app.include_router(routes_sites.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(routes_workflow.router, prefix="/api", dependencies=[Depends(current_user)])
 app.include_router(routes_admin.router, prefix="/api", dependencies=[Depends(current_user)])
+app.include_router(routes_offmarket.router, prefix="/api", dependencies=[Depends(current_user)])

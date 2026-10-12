@@ -113,8 +113,66 @@ class Notifications(BaseModel):
     notify_on_critical_alerts: bool = True
 
 
+class BuyerProfile(BaseModel):
+    """Who the letters come from. Facts are used in drafts only once you confirm them."""
+
+    persona: Literal["private", "couple", "represented"] = "couple"
+    first_name: str | None = "Sai"
+    last_name: str | None = None
+    partner_term: Literal["wife", "husband", "partner"] | None = "wife"
+    returning_to_uk: bool | None = True
+    current_location_note: str | None = None
+    local_connection: str | None = None
+    funding_statement: str | None = None  # e.g. "We have a self-build mortgage agreed in principle"
+    agent_name: str | None = None
+    agent_company: str | None = None
+    reply_postal_address: str | None = None
+    reply_email: str | None = None
+    reply_phone: str | None = None
+    facts_confirmed: bool = False
+    confirmed_at: dt.datetime | None = None
+
+
+class OutreachSettings(BaseModel):
+    daily_draft_limit: int = Field(5, ge=0, le=10)
+    follow_up_after_days: int = Field(24, ge=14, le=60)
+    max_follow_ups: int = Field(1, ge=0, le=1)
+    min_days_between_contacts: int = Field(21, ge=14)
+    max_contacts_per_year: int = Field(2, ge=1, le=3)
+    retention_months: int = Field(6, ge=1, le=36)
+    postage_estimate_gbp: float = Field(0.87, ge=0, description="Editable estimate (2nd class stamp, check current Royal Mail price)")
+    postal_provider: Literal["manual", "stannp"] = "manual"
+    postal_provider_test_mode: bool = True
+    lia_summary: str = (
+        "Purpose: to ask a landowner, once, whether they would consider selling land for a single self-built home. "
+        "Necessity: their identity and address come from the public HM Land Registry register and there is no other way to reach them. "
+        "Balance: a single, polite, clearly identified letter with an easy opt-out, no follow-up after a refusal, data kept briefly and "
+        "deleted on request; we judge this within their reasonable expectations as owners of registered land."
+    )
+
+
+class ProspectingArea(BaseModel):
+    name: str
+    lon: float = Field(ge=-8.7, le=2.0)
+    lat: float = Field(ge=49.8, le=61.0)
+    radius_m: int = Field(800, ge=100, le=2000)
+    enabled: bool = True
+    types: list[str] = Field(default_factory=lambda: ["garden_subdivision", "edge_paddock", "outbuilding", "replacement", "derelict", "planning_history"])
+
+
+DEFAULT_PROSPECTING = [
+    # Centres taken from real brownfield-register coordinates in each town; edit freely.
+    ProspectingArea(name="Fordingbridge fringe", lon=-1.8063, lat=50.9273),
+    ProspectingArea(name="Ringwood fringe", lon=-1.7910, lat=50.8453),
+    ProspectingArea(name="New Milton north", lon=-1.6547, lat=50.7553),
+]
+
+
 class PreferencesModel(BaseModel):
     search_areas: list[SearchArea]
+    buyer: BuyerProfile = BuyerProfile()
+    outreach: OutreachSettings = OutreachSettings()
+    prospecting_areas: list[ProspectingArea] = Field(default_factory=lambda: list(DEFAULT_PROSPECTING))
     budget: Budget = Budget()
     finance: Finance = Finance()
     programme: Programme = Programme()

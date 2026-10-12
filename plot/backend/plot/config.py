@@ -17,7 +17,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="PLOT_", extra="ignore")
 
-    env: str = Field("production", description="production | development | test")
+    env: str = Field("production", description="production | development | test | sandbox")
+    # Public URL of the web app (used for OAuth redirect URIs: <public_url>/api/mail/oauth/callback)
+    public_url: str = "http://localhost:3000"
     database_url: str = "postgresql+psycopg://postgres@127.0.0.1:5432/plot"
 
     # Master key (Fernet, urlsafe base64 32 bytes) for encrypting stored credentials.
@@ -46,6 +48,11 @@ class Settings(BaseSettings):
     @property
     def is_dev(self) -> bool:
         return self.env in ("development", "test")
+
+    @property
+    def is_sandbox(self) -> bool:
+        """Separate test environment: clearly labelled mock contacts, no real mailboxes or postal APIs."""
+        return self.env == "sandbox"
 
     @property
     def secure_cookies(self) -> bool:

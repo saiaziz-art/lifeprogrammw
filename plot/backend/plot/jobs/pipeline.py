@@ -25,6 +25,8 @@ from plot.engine.costs.rates import load_rates, seed_rates
 from plot.ingest import address_tokens, mark_missing, upsert
 from plot.jobs.notify import deliver_digest, send_alert
 from plot.models import Assessment, Digest, Evidence, Lead, LeadEvent, Listing, ListingEvent, Run, Site, Source, SourceRun, utcnow
+from plot.offmarket import agent as offmarket
+from plot.outreach.drafting import prepare_drafts
 from plot.preferences import enabled_bboxes, load_preferences, point_in_search_area
 from plot.sources.base import DiscoverySource, EnrichmentSource, RunContext, SiteContext, SourceError
 from plot.sources.http import classify
@@ -153,12 +155,17 @@ def _execute(db: Session, run: Run, rec: Recorder, max_enrich: int) -> None:
                     counts["fetched"] = getattr(adapter, "records_fetched", 0)
             if meta.kind != "email" and not getattr(adapter, "reference_only", False):
                 mark_missing(db, meta.id, seen, run.id)
-            _record_source(db, run, meta.id, "ok", fetched=counts["fetched"], new=counts["new"], changed=counts["changed"], started=started)
-            results[meta.id] = {"status": "ok"} | counts
+            degraded = getattr(adapter, "degraded_note", None)
+            _record_source(db, run, meta.id, "degraded" if degraded else "ok", fetched=counts["fetched"], new=counts["new"], changed=counts["changed"], started=started, note=degraded)
+            results[meta.id] = {"status": "degraded" if degraded else "ok"} | counts
+            if getattr(adapter, "area_stats", None):
+                results[meta.id]["areas"] = adapter.area_stats
         except SourceError as err:
             status = "blocked" if err.error_class == "blocked_by_terms" else "not_configured" if err.error_class == "not_configured" else "failed"
             _record_source(db, run, meta.id, status, err=err, started=started)
             results[meta.id] = {"status": status, "error": str(err.args[0])}
+            if getattr(adapter, "area_stats", None):
+                results[meta.id]["areas"] = adapter.area_stats
         except Exception as exc:  # noqa: BLE001
             err = classify(exc)
             _record_source(db, run, meta.id, "failed", err=err, started=started)
@@ -222,6 +229,19 @@ def _execute(db: Session, run: Run, rec: Recorder, max_enrich: int) -> None:
             n_new += 1
     db.commit()
     rec.finish("ok", reassessed=n_new, unchanged=n_same)
+
+    # 7b — off-market acquisition (research and drafting only; never contacts anyone) ----
+    rec.start("acquisition", "7b. Score off-market prospects and prepare drafts for your approval (never sends)")
+    synced = offmarket.sync_leads(db, run.id)
+    from plot.outreach.compliance import retention_sweep
+    from plot.outreach.delivery import sync_replies
+
+    deleted = retention_sweep(db)
+    replies = sync_replies(db)
+    scored = offmarket.rescore_all(db)
+    drafts = prepare_drafts(db, prefs, actor="system")
+    db.commit()
+    rec.finish("ok" if not replies["errors"] else "degraded", analyses_updated=synced, prospects_scored=scored, drafts=drafts, replies=replies, retention_deleted=deleted)
 
     # 8 — rank ---------------------------------------------------------------------
     rec.start("rank", "8. Rank opportunities")
@@ -373,14 +393,11 @@ def _apply_derived(db: Session, site: Site) -> None:
                     site.area_source = "INSPIRE indicative extent"
     # auto-advance off-market leads only as far as evidence supports
     lead = db.scalar(select(Lead).where(Lead.site_id == site.id))
-    if lead is not None and lead.stage == "potential_site_identified" and polys:
+    if lead is not None and polys and lead.ownership_status in ("unknown", "inspire_matched"):
         ids = ", ".join(str(p.data.get("inspire_id")) for p in polys[:3])
-        for frm, to, note in (
-            ("potential_site_identified", "parcel_title_matched", f"INSPIRE title extent(s) matched: {ids}"),
-            ("parcel_title_matched", "ownership_research_needed", "Owner identity requires an official copy of the title register (HM Land Registry) — not available from open data"),
-        ):
-            db.add(LeadEvent(lead_id=lead.id, from_stage=frm, to_stage=to, actor="system", note=note))
-            lead.stage = to
+        lead.ownership_status = "title_purchase_needed"
+        lead.analysis = (lead.analysis or {}) | {"inspire_ids": [p.data.get("inspire_id") for p in polys[:5]]}
+        db.add(LeadEvent(lead_id=lead.id, from_stage=lead.stage, to_stage=lead.stage, actor="system", note=f"INSPIRE title extent(s) matched: {ids}. Owner identity requires an official copy of the register (HM Land Registry)."))
 
 
 def _dedupe(db: Session) -> int:
@@ -477,7 +494,10 @@ def _digest(db: Session, run: Run, prefs) -> Digest:
         lines.append("No genuinely new or materially improved opportunities today.")
     for i, it in enumerate(items, 1):
         lines += [f"{i}. {it['headline']}  (score {it['score']:.0f}/100, {it['reason']}, data confidence {it['confidence']}{', HISTORIC RECORD' if it['stale'] else ''})", f"   {it['budget_fit']}", f"   Next: {it['next_action']}", ""]
-    d = Digest(run_id=run.id, digest_date=utcnow().date(), items=items, body_text="\n".join(lines), delivery_status="nothing_to_send" if not items else "not_configured")
+    brief = offmarket.briefing(db, run.started_at)
+    lines += offmarket.briefing_text(brief)
+    has_news = bool(items) or offmarket.briefing_has_news(brief)
+    d = Digest(run_id=run.id, digest_date=utcnow().date(), items=items, briefing=brief, body_text="\n".join(lines), delivery_status="nothing_to_send" if not has_news else "not_configured")
     db.add(d)
     db.flush()
     return d

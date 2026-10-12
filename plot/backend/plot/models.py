@@ -272,16 +272,29 @@ class Assessment(Base):
 
 # --------------------------------------------------------------------------- acquisition workflow
 
+# Off-market CRM stages (owner outreach pipeline)
 LEAD_STAGES = [
-    "potential_site_identified",
-    "parcel_title_matched",
-    "ownership_research_needed",
+    "discovered",
+    "feasibility_screened",
     "owner_verified",
-    "outreach_approved",
-    "owner_contacted",
-    "interest_confirmed",
+    "draft_prepared",
+    "awaiting_approval",
+    "contacted",
+    "awaiting_response",
+    "interested",
+    "feasibility_discussion",
     "negotiation",
     "under_offer",
+    "completed",
+    "closed",
+]
+
+OWNERSHIP_STATUSES = [
+    "unknown",  # nothing matched yet
+    "inspire_matched",  # registered title extent found; owner unknown
+    "title_purchase_needed",  # owner identity needs an HMLR official copy
+    "inferred_ccod",  # company owner suggested by HMLR CCOD address match (unconfirmed)
+    "verified",  # owner confirmed from an official title register you supplied
 ]
 
 PIPELINE_STAGES = [
@@ -303,13 +316,29 @@ class Lead(Base):
     __tablename__ = "leads"
     id: Mapped[int] = mapped_column(primary_key=True)
     site_id: Mapped[int] = mapped_column(ForeignKey("sites.id", ondelete="CASCADE"), unique=True)
-    stage: Mapped[str] = mapped_column(String(40), default="potential_site_identified")
+    stage: Mapped[str] = mapped_column(String(40), default="discovered")
     signals: Mapped[list[Any]] = mapped_column(default=list)  # why it was flagged
     owner: Mapped[dict[str, Any]] = mapped_column(default=dict)  # verified fields only, each with source
     availability_evidence: Mapped[list[Any]] = mapped_column(default=list)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
     updated_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow, onupdate=utcnow)
+    # off-market acquisition agent
+    opportunity_type: Mapped[str] = mapped_column(String(40), default="register_site")
+    ownership_status: Mapped[str] = mapped_column(String(30), default="unknown")
+    analysis: Mapped[dict[str, Any]] = mapped_column(default=dict)  # subdivision geometry, access, character...
+    acq_score: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    acq_score_total: Mapped[float | None] = mapped_column(Float)
+    acq_confidence: Mapped[float | None] = mapped_column(Float)
+    acq_fatal: Mapped[bool] = mapped_column(Boolean, default=False)
+    benefits: Mapped[list[Any]] = mapped_column(default=list)
+    contact_method: Mapped[str | None] = mapped_column(String(30))
+    next_action: Mapped[str | None] = mapped_column(Text)
+    decline_reason: Mapped[str | None] = mapped_column(String(40))
+    closed_reason: Mapped[str | None] = mapped_column(Text)
+    stage_changed_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    last_contact_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    discovered_run_id: Mapped[int | None] = mapped_column(Integer)
 
 
 class LeadEvent(Base):
@@ -347,12 +376,38 @@ class Outreach(Base):
     recipient_email: Mapped[str | None] = mapped_column(String(320))
     subject: Mapped[str | None] = mapped_column(String(300))
     body: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft|approved|sent|withdrawn
+    # draft | needs_changes | needs_compliance_review | awaiting_approval | approved | sending | sent |
+    # posted | delivery_unknown | failed | rejected | withdrawn | superseded
+    status: Mapped[str] = mapped_column(String(30), default="draft")
     compliance: Mapped[dict[str, Any]] = mapped_column(default=dict)
     created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
     approved_at: Mapped[dt.datetime | None] = mapped_column(TS)
     approved_by: Mapped[str | None] = mapped_column(String(320))
     sent_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    # agent extensions
+    contact_id: Mapped[int | None] = mapped_column(ForeignKey("contacts.id", ondelete="SET NULL"), index=True)
+    kind: Mapped[str] = mapped_column(String(20), default="initial")  # initial | follow_up | reply
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("outreach.id", ondelete="SET NULL"))
+    persona: Mapped[str | None] = mapped_column(String(20))
+    generator: Mapped[str | None] = mapped_column(String(20))  # ai | composer | manual
+    generator_meta: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    footer: Mapped[str | None] = mapped_column(Text)  # identity, data source, privacy & opt-out notice (hashed with the body)
+    word_count: Mapped[int | None] = mapped_column(Integer)
+    content_hash: Mapped[str | None] = mapped_column(String(64))
+    recipient_hash: Mapped[str | None] = mapped_column(String(64))
+    approved_hash: Mapped[str | None] = mapped_column(String(64))
+    provider: Mapped[str | None] = mapped_column(String(30))  # gmail | outlook | stannp | manual_post
+    provider_message_id: Mapped[str | None] = mapped_column(String(300), unique=True)
+    provider_thread_id: Mapped[str | None] = mapped_column(String(300))
+    provider_draft_id: Mapped[str | None] = mapped_column(String(300))
+    delivery_status: Mapped[str | None] = mapped_column(String(30))
+    delivery_detail: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    pdf: Mapped[bytes | None] = mapped_column(LargeBinary)
+    postage_estimate_gbp: Mapped[float | None] = mapped_column(Float)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), unique=True)
+    send_attempted_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    rejected_reason: Mapped[str | None] = mapped_column(Text)
+    review_reason: Mapped[str | None] = mapped_column(Text)
 
 
 class Suppression(Base):
@@ -361,8 +416,10 @@ class Suppression(Base):
     __tablename__ = "suppressions"
     id: Mapped[int] = mapped_column(primary_key=True)
     match_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    kind: Mapped[str] = mapped_column(String(20), default="name_address")  # name_address | address | email
     label: Mapped[str | None] = mapped_column(String(300))
     reason: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str | None] = mapped_column(String(40))  # user | reply | complaint
     created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
 
 
@@ -469,6 +526,7 @@ class Digest(Base):
     run_id: Mapped[int | None] = mapped_column(ForeignKey("runs.id", ondelete="SET NULL"))
     digest_date: Mapped[dt.date] = mapped_column(Date, index=True)
     items: Mapped[list[Any]] = mapped_column(default=list)
+    briefing: Mapped[dict[str, Any]] = mapped_column(default=dict)  # off-market acquisition briefing (real counts)
     body_text: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
     # not_configured | sent | failed | nothing_to_send
@@ -568,3 +626,105 @@ class ServiceHeartbeat(Base):
     name: Mapped[str] = mapped_column(String(120), primary_key=True)
     at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
     detail: Mapped[dict[str, Any]] = mapped_column(default=dict)
+
+
+
+class Contact(Base):
+    """A proposed recipient. Created only from authoritative sources (title register, Companies
+    House, the owner's own correspondence) or entered by you with a stated source."""
+
+    __tablename__ = "contacts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    # individual | company | public_body | charity | personal_representatives | trustees | unknown
+    kind: Mapped[str] = mapped_column(String(30), default="unknown")
+    name: Mapped[str] = mapped_column(String(300))
+    salutation: Mapped[str | None] = mapped_column(String(120))
+    address_lines: Mapped[list[Any]] = mapped_column(default=list)
+    postcode: Mapped[str | None] = mapped_column(String(10))
+    country: Mapped[str] = mapped_column(String(60), default="United Kingdom")
+    email: Mapped[str | None] = mapped_column(String(320))
+    # null | owner_initiated | consent_recorded | corporate_subscriber
+    email_basis: Mapped[str | None] = mapped_column(String(30))
+    source: Mapped[str] = mapped_column(String(40))  # title_register | companies_house | ccod | owner_reply | manual
+    source_ref: Mapped[str | None] = mapped_column(String(300))
+    source_document_id: Mapped[int | None] = mapped_column(ForeignKey("title_documents.id", ondelete="SET NULL"))
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    verified_by: Mapped[str | None] = mapped_column(String(320))
+    verified_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    retention_until: Mapped[dt.date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
+
+
+class TitleDocument(Base):
+    """An HM Land Registry official copy you obtained (PDF), with deterministic extraction."""
+
+    __tablename__ = "title_documents"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lead_id: Mapped[int | None] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    site_id: Mapped[int | None] = mapped_column(ForeignKey("sites.id", ondelete="CASCADE"))
+    filename: Mapped[str] = mapped_column(String(300))
+    sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    text: Mapped[str | None] = mapped_column(Text)
+    title_number: Mapped[str | None] = mapped_column(String(20))
+    tenure: Mapped[str | None] = mapped_column(String(20))
+    extracted: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    status: Mapped[str] = mapped_column(String(20), default="uploaded")  # uploaded | parsed | verified | rejected
+    source_note: Mapped[str | None] = mapped_column(Text)
+    uploaded_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
+    uploaded_by: Mapped[str | None] = mapped_column(String(320))
+    verified_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    verified_by: Mapped[str | None] = mapped_column(String(320))
+    retention_until: Mapped[dt.date | None] = mapped_column(Date)
+
+
+class InboundMessage(Base):
+    """A reply from an owner (synced from a connected mailbox or logged by you for letters)."""
+
+    __tablename__ = "inbound_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), index=True)
+    outreach_id: Mapped[int | None] = mapped_column(ForeignKey("outreach.id", ondelete="SET NULL"))
+    channel: Mapped[str] = mapped_column(String(20))  # email | post | phone_note
+    from_name: Mapped[str | None] = mapped_column(String(300))
+    from_address: Mapped[str | None] = mapped_column(String(500))
+    subject: Mapped[str | None] = mapped_column(String(500))
+    body: Mapped[str] = mapped_column(Text)
+    received_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
+    provider_message_id: Mapped[str | None] = mapped_column(String(300), unique=True)
+    # interested | possibly_interested | wants_information | requests_price | not_interested |
+    # requests_no_contact | unknown
+    category: Mapped[str] = mapped_column(String(30), default="unknown")
+    category_source: Mapped[str] = mapped_column(String(20), default="rules")  # rules | ai | user
+    category_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    evidence: Mapped[str | None] = mapped_column(Text)
+    decline_reason: Mapped[str | None] = mapped_column(String(40))
+    handled: Mapped[bool] = mapped_column(Boolean, default=False)
+    suggested_reply_id: Mapped[int | None] = mapped_column(ForeignKey("outreach.id", ondelete="SET NULL"))
+    created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
+
+
+class MailAccount(Base):
+    """A connected Gmail / Microsoft 365 mailbox (OAuth tokens encrypted at rest)."""
+
+    __tablename__ = "mail_accounts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20))  # google | microsoft
+    email_address: Mapped[str] = mapped_column(String(320))
+    token_ciphertext: Mapped[bytes] = mapped_column(LargeBinary)
+    scopes: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="connected")
+    connected_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)
+    last_sync_at: Mapped[dt.datetime | None] = mapped_column(TS)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    sync_cursor: Mapped[dict[str, Any]] = mapped_column(default=dict)
+
+
+class OAuthState(Base):
+    __tablename__ = "oauth_states"
+    state: Mapped[str] = mapped_column(String(80), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20))
+    verifier_ciphertext: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[dt.datetime] = mapped_column(TS, default=utcnow)

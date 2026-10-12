@@ -70,6 +70,7 @@ class PublicHttp:
         max_retries: int | None = None,
         transport: httpx.BaseTransport | None = None,
         sleep=time.sleep,
+        auth: Any = None,
     ):
         s = get_settings()
         self.db = db
@@ -80,6 +81,7 @@ class PublicHttp:
             headers={"User-Agent": _user_agent(), "Accept": "application/json"},
             follow_redirects=True,
             transport=transport,
+            auth=auth,
         )
         self.requests_made = 0
 

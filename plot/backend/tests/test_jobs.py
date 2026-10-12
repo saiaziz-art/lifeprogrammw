@@ -16,7 +16,7 @@ from plot.models import Assessment, AuditLog, Digest, Evidence, Job, Lead, Listi
 from plot.sources.base import CandidateRecord
 from tests import mocks
 
-UTC = dt.timezone.utc
+UTC = dt.UTC
 LON = ZoneInfo("Europe/London")
 
 
@@ -109,7 +109,7 @@ def test_daily_run_end_to_end_with_partial_failures(db):
     db.expire_all()
     run = db.get(Run, run.id)
     assert run.status == "partial"  # EA, BGS, HMLR, NaPTAN blocked → reported, not hidden
-    assert [s["name"] for s in run.steps] == ["prepare", "retrieve", "changes", "public_data", "dedupe", "screen", "enrich", "assess", "rank", "digest", "deliver"]
+    assert [s["name"] for s in run.steps] == ["prepare", "retrieve", "changes", "public_data", "dedupe", "screen", "enrich", "assess", "acquisition", "rank", "digest", "deliver"]
     srs = {s.source_id: s for s in db.scalars(select(SourceRun).where(SourceRun.run_id == run.id)).all()}
     assert srs["planning_data.brownfield"].status == "ok" and srs["planning_data.brownfield"].records_new == 2
     assert srs["github.digital_land_snapshots"].status == "ok"
@@ -123,7 +123,13 @@ def test_daily_run_end_to_end_with_partial_failures(db):
     s1 = db.scalar(select(Site).join(Evidence, Evidence.site_id == Site.id).where(Evidence.source_ref == "1700001"))
     assert s1.lpa_name == "Test LPA" and s1.boundary_source == "inspire" and not s1.stale
     lead = db.scalar(select(Lead).where(Lead.site_id == s1.id))
-    assert lead.stage == "ownership_research_needed"  # INSPIRE matched; owner still unknown
+    assert lead.ownership_status == "title_purchase_needed"  # INSPIRE matched; owner still unknown
+    assert lead.stage == "feasibility_screened" and lead.acq_score_total is not None
+    assert "official copy" in lead.next_action
+    acq = next(s for s in run.steps if s["name"] == "acquisition")
+    assert acq["detail"]["drafts"]["created"] == []  # buyer profile unconfirmed → nothing drafted, nothing sent
+    # discovery needs building footprints: with OSM blocked and no OS import, it fails honestly
+    assert srs["offmarket.discovery"].status == "failed" and srs["offmarket.discovery"].error_class == "network_blocked"
     assert db.scalar(select(func.count()).select_from(Assessment).where(Assessment.is_current.is_(True))) >= 4
     assert db.scalar(select(func.count()).select_from(Listing)) == 0  # register records are never listings
     digest = db.scalar(select(Digest))

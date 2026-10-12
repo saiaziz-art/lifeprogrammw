@@ -102,7 +102,70 @@ def handle_ingest_eml(db, payload: dict, job_id: int) -> dict:
     return run.summary
 
 
+def handle_offmarket_discovery(db, payload: dict, job_id: int) -> dict:
+    """Discovery only (no contact): analyse prospecting areas, enrich and assess new prospects, score."""
+    from plot.engine.assess import assess_site, rerank
+    from plot.engine.costs.rates import load_rates
+    from plot.ingest import upsert
+    from plot.jobs.pipeline import _enrich, _record_source
+    from plot.models import Run, Site, Source, utcnow
+    from plot.offmarket import agent
+    from plot.preferences import enabled_bboxes, load_preferences
+    from plot.sources.base import RunContext, SourceError
+    from plot.sources.http import classify
+    from plot.sources.registry import load_secrets, sync_sources
+
+    sync_sources(db)
+    prefs, v = load_preferences(db)
+    run = Run(job_id=job_id, kind="offmarket_discovery", trigger=payload.get("trigger", "manual"), status="running", steps=[], summary={})
+    db.add(run)
+    db.commit()
+    src = db.get(Source, agent.SOURCE_ID)
+    secrets = load_secrets(db)
+    ctx = RunContext(db=db, config=src.config or {}, search_bboxes=enabled_bboxes(prefs), secrets=secrets, now=utcnow(), run_id=run.id)
+    adapter = agent.OffMarketDiscovery()
+    started = utcnow()
+    counts = {"fetched": 0, "new": 0, "changed": 0}
+    try:
+        with db.begin_nested():
+            for rec in adapter.discover(ctx):
+                counts["fetched"] += 1
+                _, outcome = upsert(db, rec, run.id)
+                if outcome in ("new", "changed"):
+                    counts[outcome] += 1
+        _record_source(db, run, agent.SOURCE_ID, "degraded" if adapter.degraded_note else "ok", fetched=counts["fetched"], new=counts["new"], changed=counts["changed"], started=started, note=adapter.degraded_note)
+        status = "partial" if adapter.degraded_note else "succeeded"
+    except Exception as exc:  # noqa: BLE001 — honest failure record
+        err = exc if isinstance(exc, SourceError) else classify(exc)
+        _record_source(db, run, agent.SOURCE_ID, "failed", err=err, started=started)
+        status = "failed"
+        run.error = str(err.args[0])
+    db.commit()
+    stats = _enrich(db, run, prefs, secrets, enabled_bboxes(prefs), only_new=True, run_started=run.started_at, limit=40)
+    rc = load_rates(db)
+    for s in db.scalars(select(Site).where(Site.excluded.is_(False), Site.first_seen_at >= run.started_at)).all():
+        assess_site(db, s, prefs, v, run_id=run.id, rates_cache=rc)
+    agent.sync_leads(db, run.id)
+    scored = agent.rescore_all(db)
+    rerank(db)
+    run.status = status if not stats["failed_sources"] or status == "failed" else "partial"
+    run.summary = counts | {"areas": adapter.area_stats, "prospects_scored": scored, "enrichment_failures": stats["failed_sources"]}
+    run.finished_at = utcnow()
+    db.commit()
+    return run.summary
+
+
+def handle_sync_replies(db, payload: dict, job_id: int) -> dict:
+    from plot.outreach.delivery import sync_replies
+
+    out = sync_replies(db)
+    db.commit()
+    return out
+
+
 HANDLERS = {
+    "offmarket_discovery": handle_offmarket_discovery,
+    "sync_replies": handle_sync_replies,
     "daily_sourcing": handle_daily_sourcing,
     "reassess_all": handle_reassess_all,
     "enrich_site": handle_enrich_site,

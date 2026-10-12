@@ -54,4 +54,5 @@ def install(router, *, block: set[str] | None = None) -> None:
     router.route(host="map.bgs.ac.uk").mock(side_effect=blocked)
     router.route(host="landregistry.data.gov.uk").mock(side_effect=blocked)
     router.route(host="naptan.api.dft.gov.uk").mock(side_effect=blocked)
+    router.route(host="overpass-api.de").mock(side_effect=blocked)
     router.route(host="raw.githubusercontent.com").mock(return_value=httpx.Response(200, content=fixture_text("brownfield_new_forest_excerpt.csv").encode("cp1252", "replace")))

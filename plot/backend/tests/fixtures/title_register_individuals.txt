@@ -1,0 +1,35 @@
+TEST DATA - SYNTHETIC REGISTER FOR AUTOMATED TESTS - NOT A REAL TITLE
+Official copy of register of title
+Title number TT123456 Edition date 14.06.2019
+– This official copy shows the entries on the register of title on 05 Oct 2026 at 10:15:22.
+– This date must be quoted as the "search from date" in any official search application based on this copy.
+– The date at the beginning of an entry is the date on which the entry was made in the register.
+– Issued on 05 Oct 2026.
+– Under s.67 of the Land Registration Act 2002, this copy is admissible in evidence to the same extent as the original.
+This title is dealt with by HM Land Registry, Test Office.
+A: Property Register
+This register describes the land and estate comprised in the title.
+HAMPSHIRE : NEW FOREST
+1 (12 March 1985) The Freehold land shown edged with red on the plan of the above Title filed at
+the Registry and being 12 Example Road, Testbridge (SP6 9ZZ).
+2 (12 March 1985) The land has the benefit of a right of way on foot only over the passageway
+tinted brown on the title plan.
+B: Proprietorship Register
+This register specifies the class of title and identifies the owner. It contains any entries that
+affect the right of disposal.
+Title absolute
+1 (14 June 2019) PROPRIETOR: ALEX JORDAN TESTER and SAM RILEY TESTER of 12 Example
+Road, Testbridge SP6 9ZZ.
+2 (14 June 2019) The price stated to have been paid on 30 May 2019 was £465,000.
+3 (14 June 2019) RESTRICTION: No disposition by a sole proprietor of the registered estate
+(except a trust corporation) under which capital money arises is to be registered unless
+authorised by an order of the court.
+C: Charges Register
+This register contains any charges and other matters that affect the land.
+1 (12 March 1985) A Conveyance of the land in this title dated 1 June 1960 made between (1)
+Test Estates Limited and (2) Pat Example contains covenants details of which are set out in the
+schedule of restrictive covenants annexed hereto.
+2 (14 June 2019) REGISTERED CHARGE dated 30 May 2019.
+3 (14 June 2019) Proprietor: EXAMPLE TEST BANK PLC (Co. Regn. No. 01234567) of 1 Test Street,
+London EC1A 9ZZ.
+End of register

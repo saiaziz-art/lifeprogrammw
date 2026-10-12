@@ -5,7 +5,7 @@ Rules:
   ("source-record:<source>") on a site and never become listings.
 - Price/status changes create ListingEvents; a listing is marked withdrawn only after it is
   missing from several consecutive SUCCESSFUL fetches of its source (never on a failed run).
-- Off-market/register sites get a Lead at 'potential_site_identified' — availability is
+- Off-market/register sites get a Lead at 'discovered' — availability is
   never implied.
 """
 
@@ -51,7 +51,7 @@ def _new_site(db: Session, rec: CandidateRecord, origin: str) -> Site:
     site = Site(
         point=from_shape(Point(rec.lon, rec.lat), srid=4326),
         boundary=from_shape(_wkt(rec.boundary_wkt), srid=4326) if rec.boundary_wkt else None,
-        boundary_source="register_polygon" if rec.boundary_wkt else "none",
+        boundary_source=(rec.raw.get("boundary_source") or "register_polygon") if rec.boundary_wkt else "none",
         area_m2=rec.area_m2,
         area_source=f"reported by {rec.source_id}" if rec.area_m2 else None,
         address=rec.address,
@@ -178,10 +178,11 @@ def _upsert_record(db: Session, rec: CandidateRecord, now: dt.datetime) -> tuple
             )
         )
         if db.scalar(select(Lead).where(Lead.site_id == site.id)) is None and site.origin != "on_market":
-            lead = Lead(site_id=site.id, stage="potential_site_identified", signals=rec.signals)
+            otype = rec.raw.get("opportunity_type") or ("register_site" if rec.record_type == "register_site" else "user_identified")
+            lead = Lead(site_id=site.id, stage="discovered", signals=rec.signals, opportunity_type=otype, stage_changed_at=now)
             db.add(lead)
             db.flush()
-            db.add(LeadEvent(lead_id=lead.id, from_stage=None, to_stage="potential_site_identified", actor="system", note=f"Identified from {rec.source_id}"))
+            db.add(LeadEvent(lead_id=lead.id, from_stage=None, to_stage="discovered", actor="system", note=f"Identified from {rec.source_id}"))
         db.flush()
         return site, "new" if created else "changed"
     site = db.get(Site, ev.site_id)

@@ -41,7 +41,7 @@ def _migrate():
 
 
 TABLES = [
-    "outreach", "lead_events", "leads", "pipeline_items", "feedback", "overrides", "assessments", "listing_events", "listings",
+    "inbound_messages", "outreach", "contacts", "title_documents", "mail_accounts", "oauth_states", "lead_events", "leads", "pipeline_items", "feedback", "overrides", "assessments", "listing_events", "listings",
     "evidence", "ingest_inbox", "processed_messages", "expenses", "sites", "source_runs", "digests", "runs", "jobs", "schedules",
     "ref_features", "api_cache", "audit_log", "user_sessions", "users", "secrets", "preferences_history", "preferences", "cost_rates",
     "service_heartbeats", "suppressions", "sources",

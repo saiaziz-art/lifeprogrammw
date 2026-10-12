@@ -75,36 +75,17 @@ def test_opportunities_dossier_and_overrides(client, db):
     assert any("source(s) failing" in a["title"] for a in dash["alerts"])
 
 
-def test_lead_stage_gates_and_outreach_compliance(client, db):
+def test_daily_run_marks_matched_titles_for_official_copy(client, db):
     with respx.mock(assert_all_called=False) as router:
         mocks.install(router)
         run_sourcing(db, trigger="test", max_enrich=10)
-    lead = db.scalar(select(Lead).where(Lead.stage == "ownership_research_needed"))
-    url = f"/api/leads/{lead.id}"
-    r = client.patch(url, json={"stage": "owner_verified"}, headers=H)
-    assert r.status_code == 422 and "record the owner" in str(r.json())
-    assert client.post(f"{url}/outreach", json={"sender_name": "Me", "sender_contact": "my address"}, headers=H).status_code == 422
-    owner = {"name": "Example Owner", "owner_type": "individual", "address": "1 Test Road", "source": "TEST: official copy title XX0000", "source_date": "2026-10-01"}
-    assert client.patch(url, json={"owner": owner, "stage": "owner_verified"}, headers=H).status_code == 200
-    o = client.post(f"{url}/outreach", json={"sender_name": "Me", "sender_contact": "my address"}, headers=H).json()
-    assert "HM Land Registry title register" in o["body"] and o["status"] == "draft"
-    # email to an individual is blocked by PECR check
-    oe = client.post(f"{url}/outreach", json={"channel": "email", "sender_name": "Me", "sender_contact": "my address"}, headers=H).json()
-    assert next(c for c in oe["compliance"]["checks"] if c["code"] == "pecr_channel")["ok"] is False
-    # removing the privacy paragraph fails a blocking check
-    stripped = o["body"].split("How I obtained")[0]
-    r = client.patch(f"/api/outreach/{o['id']}", json={"body": stripped, "action": "approve", "lia_confirmed": True}, headers=H)
-    assert r.status_code == 422
-    r = client.patch(f"/api/outreach/{o['id']}", json={"body": o["body"], "action": "approve", "lia_confirmed": True}, headers=H)
-    assert r.status_code == 200 and r.json()["status"] == "approved"
-    assert client.patch(url, json={"stage": "outreach_approved"}, headers=H).status_code == 200
-    assert client.patch(url, json={"stage": "owner_contacted"}, headers=H).status_code == 422  # not yet sent
-    assert client.patch(f"/api/outreach/{o['id']}", json={"action": "mark_sent"}, headers=H).json()["status"] == "sent"
-    assert client.patch(url, json={"stage": "owner_contacted"}, headers=H).status_code == 200
-    assert client.patch(url, json={"stage": "interest_confirmed"}, headers=H).status_code == 422
-    assert client.patch(url, json={"add_evidence": {"kind": "owner_reply", "summary": "Owner wrote back: open to selling the paddock", "date": "2026-10-20"}, "stage": "interest_confirmed"}, headers=H).status_code == 200
-    # suppression list blocks future letters to the same person
-    assert client.post("/api/suppressions", json={"name": "Example Owner", "address": "1 Test Road"}, headers=H).status_code == 200
+    lead = db.scalar(select(Lead).where(Lead.ownership_status == "title_purchase_needed"))
+    assert lead is not None and lead.stage in ("discovered", "feasibility_screened")
+    d = client.get(f"/api/offmarket/leads/{lead.id}").json()
+    assert "official copy" in d["next_action"]
+    # contact stages cannot be set by hand
+    assert client.patch(f"/api/offmarket/leads/{lead.id}", json={"stage": "contacted"}, headers=H).status_code == 422
+    assert client.post(f"/api/offmarket/leads/{lead.id}/drafts", json={}, headers=H).status_code == 422  # owner not verified
 
 
 def test_preferences_validation_and_import(client, db):

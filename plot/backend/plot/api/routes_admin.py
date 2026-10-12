@@ -414,7 +414,7 @@ def missing_information(db: Session = Depends(get_db)) -> dict:
             rows.append({"site_id": s.id, "headline": s.headline, "gaps": gaps})
     unconfigured = [{"id": s.id, "name": s.name, "status": s.last_status, "error": s.last_error} for s in db.scalars(select(Source).where(Source.last_status.in_(("not_configured", "failed", "degraded")))).all()]
     inbox_n = db.scalar(select(func.count()).select_from(IngestInbox).where(IngestInbox.dismissed.is_(False), IngestInbox.resolved_site_id.is_(None)))
-    return {"sites": rows, "sources": unconfigured, "inbox_unlocated": inbox_n, "leads_awaiting_owner_research": db.scalar(select(func.count()).select_from(Lead).where(Lead.stage == "ownership_research_needed"))}
+    return {"sites": rows, "sources": unconfigured, "inbox_unlocated": inbox_n, "leads_awaiting_owner_research": db.scalar(select(func.count()).select_from(Lead).where(Lead.ownership_status == "title_purchase_needed"))}
 
 
 @router.get("/admin/audit")
