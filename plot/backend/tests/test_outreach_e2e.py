@@ -296,6 +296,7 @@ def test_email_workflow_with_connected_mailbox_and_opt_out(client, db, synthetic
     assert msg.category == "requests_no_contact" and msg.suggested_reply_id is None and "On Mon" not in msg.body
     lead = db.get(Lead, paddock.id)
     assert lead.stage == "closed" and lead.decline_reason == "requests_no_contact"
+    assert lead.next_action.startswith("Closed: Owner asked for no further contact")
     assert db.scalar(select(func.count()).select_from(Suppression)) >= 2
     assert client.post(f"/api/offmarket/leads/{paddock.id}/drafts", json={"kind": "follow_up"}, headers=H).status_code == 422
     assert client.patch(f"/api/offmarket/leads/{paddock.id}", json={"stage": "feasibility_screened"}, headers=H).status_code == 422

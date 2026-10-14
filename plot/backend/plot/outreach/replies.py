@@ -142,7 +142,7 @@ def record_inbound(db: Session, lead_id: int, *, channel: str, body: str, actor:
 
 def apply_category(db: Session, msg: InboundMessage, actor: str) -> None:
     """Act on the (possibly re-)categorised reply. Opt-outs take effect immediately."""
-    from plot.offmarket.agent import STAGE_ORDER, set_stage
+    from plot.offmarket.agent import STAGE_ORDER, rescore_lead, set_stage
     from plot.outreach.drafting import create_draft
 
     lead = db.get(Lead, msg.lead_id)
@@ -158,6 +158,7 @@ def apply_category(db: Session, msg: InboundMessage, actor: str) -> None:
         set_stage(db, lead, "closed", actor, lead.closed_reason)
         msg.handled = msg.category == "requests_no_contact"  # nothing to do — and no reply will be drafted
         db.flush()
+        rescore_lead(db, lead)  # refresh next action: closed leads are skipped by the daily rescore
         return
     if msg.category in ("interested", "possibly_interested", "wants_information", "requests_price"):
         if STAGE_ORDER.get(lead.stage, 0) < STAGE_ORDER["interested"]:

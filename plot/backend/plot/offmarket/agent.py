@@ -250,7 +250,7 @@ def rescore_lead(db: Session, lead: Lead, prefs=None) -> None:
     draft = latest_draft(db, lead)
     inbound = db.scalar(select(InboundMessage).where(InboundMessage.lead_id == lead.id, InboundMessage.handled.is_(False)).order_by(InboundMessage.received_at.desc()).limit(1))
     due = followup_due(db, lead, prefs.outreach.follow_up_after_days, prefs.outreach.max_follow_ups)
-    lead.next_action = next_action({"stage": lead.stage, "ownership_status": lead.ownership_status, "analysis": lead.analysis or {}, "acq_fatal": lead.acq_fatal}, draft.status if draft else None, inbound.category if inbound else None, due.isoformat() if due else None)
+    lead.next_action = next_action({"stage": lead.stage, "ownership_status": lead.ownership_status, "analysis": lead.analysis or {}, "acq_fatal": lead.acq_fatal, "closed_reason": lead.closed_reason}, draft.status if draft else None, inbound.category if inbound else None, due.isoformat() if due else None)
 
 
 def rescore_all(db: Session) -> int:

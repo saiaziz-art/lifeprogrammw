@@ -160,7 +160,7 @@ textarea { min-height: 90px; resize: vertical; }
 .pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .dl { display: grid; grid-template-columns: 170px 1fr; gap: 6px 14px; font-size: 13px; }
 .dl dt { color: var(--ink-3); }
-.dl dd { margin: 0; }
+.dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .login-wrap { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(160deg, #1d2c2a 0%, #2f5d50 100%); }
@@ -168,3 +168,5 @@ textarea { min-height: 90px; resize: vertical; }
 .legend { font-size: 12px; color: var(--ink-2); }
 .checkline { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; font-size: 13px; }
 .checkline input { margin-top: 3px; }
+.grid > * { min-width: 0; }
+input[type="file"] { max-width: 100%; }

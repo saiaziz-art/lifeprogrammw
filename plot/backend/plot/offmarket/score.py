@@ -222,6 +222,8 @@ def contact_method(contact_kind: str | None, email_basis: str | None) -> str:
 
 def next_action(lead: dict[str, Any], has_draft: str | None, last_inbound: str | None, followup_due: str | None) -> str:
     st, os_ = lead.get("stage"), lead.get("ownership_status")
+    if st == "closed":
+        return f"Closed: {lead.get('closed_reason') or 'no further action'}"
     if lead.get("acq_fatal"):
         return "Deprioritise: a fatal constraint or access problem was found"
     if last_inbound:
