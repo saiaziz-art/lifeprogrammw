@@ -181,7 +181,7 @@ export default function ImportPage() {
           ) : null}
           {mode === "offmarket" ? (
             <form className="stack" onSubmit={submitOffMarket}>
-              <div className="notice info">An off-market site is recorded as a lead at “potential site identified”. Nothing implies it is for sale.</div>
+              <div className="notice info">An off-market site appears in the Off-Market CRM as “Discovered”. Nothing implies it is for sale, and the owner is unknown until you verify an official copy of the register.</div>
               <label className="f">
                 Description *<input required minLength={3} value={om.title} onChange={(e) => setOm({ ...om, title: e.target.value })} placeholder="e.g. Redundant barn north of the lane" />
               </label>
