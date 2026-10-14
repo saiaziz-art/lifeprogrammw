@@ -60,7 +60,7 @@ function TitleCard({ d, onDone }: { d: TitleDoc; onDone: () => void }) {
           </a>
         </span>
       </div>
-      <dl className="dl small">
+      <dl className="dl small stacked">
         <dt>Property</dt>
         <dd>{ex.property_address ?? ex.property_description ?? "—"}</dd>
         <dt>Registered proprietor(s)</dt>
