@@ -1,0 +1,22 @@
+TEST DATA - SYNTHETIC REGISTER FOR AUTOMATED TESTS - NOT A REAL TITLE
+Official copy of register of title
+Title number TT765432
+Edition date 02.02.2022
+– This official copy shows the entries on the register of title on 01 Oct 2026 at 09:00:01.
+A: Property Register
+This register describes the land and estate comprised in the title.
+DORSET
+1 (02 February 2022) The Freehold land shown edged with red on the plan of the above Title filed
+at the Registry and being land on the north side of Example Lane, Testbury.
+B: Proprietorship Register
+This register specifies the class of title and identifies the owner. It contains any entries that
+affect the right of disposal.
+Title absolute
+1 (02 February 2022) PROPRIETOR: EXAMPLE LAND HOLDINGS LIMITED (Co. Regn. No. 09876543) of
+Unit 4, Test Business Park, Testbury BH99 9ZZ.
+2 (02 February 2022) The price stated to have been paid on 10 January 2022 was £60,000.
+C: Charges Register
+This register contains any charges and other matters that affect the land.
+1 (02 February 2022) UNILATERAL NOTICE in respect of an option agreement dated 5 January
+2022 in favour of Test Developments Limited.
+End of register

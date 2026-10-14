@@ -1,0 +1,71 @@
+# PLOT — production-style local deployment.
+#   cp .env.example .env   # then set PLOT_SECRET_KEY (docker compose run --rm api plot keygen)
+#   docker compose up -d --build
+#   open http://localhost:3000 and create the owner account on first visit
+#
+# The scheduler fires the daily run at 07:00 Europe/London; the worker executes it.
+# Outbound HTTPS from the api/worker containers must be allowed to the hosts listed in
+# docs/data-sources.md, otherwise those sources are reported as failed (never faked).
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: plot
+      POSTGRES_USER: plot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plot-change-me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plot -d plot"]
+      interval: 5s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      PLOT_DATABASE_URL: postgresql+psycopg://plot:${POSTGRES_PASSWORD:-plot-change-me}@db:5432/plot
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    command: ["plot", "worker"]
+    env_file: .env
+    environment:
+      PLOT_DATABASE_URL: postgresql+psycopg://plot:${POSTGRES_PASSWORD:-plot-change-me}@db:5432/plot
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    build: ./backend
+    command: ["plot", "scheduler"]
+    env_file: .env
+    environment:
+      PLOT_DATABASE_URL: postgresql+psycopg://plot:${POSTGRES_PASSWORD:-plot-change-me}@db:5432/plot
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        PLOT_API_URL: http://api:8000
+    environment:
+      PLOT_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
